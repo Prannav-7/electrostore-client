@@ -14,6 +14,9 @@ const getBaseURL = () => {
 
 const api = axios.create({
   baseURL: getBaseURL(),
+  timeout: 30000, // 30 second timeout
+  retry: 3, // Custom property for retry logic
+  retryDelay: 1000, // Custom property for retry delay
 });
 
 // Add request interceptor to include auth token
@@ -34,16 +37,39 @@ api.interceptors.request.use(
   }
 );
 
-// Add response interceptor to handle auth errors
+// Retry logic for failed requests
+const retryRequest = async (error) => {
+  const config = error.config;
+  
+  // Don't retry if we've already retried enough times
+  if (!config || !config.retry || config.__retryCount >= config.retry) {
+    return Promise.reject(error);
+  }
+  
+  // Initialize retry count if not exists
+  config.__retryCount = config.__retryCount || 0;
+  config.__retryCount += 1;
+  
+  console.log(`API Retry attempt ${config.__retryCount} for ${config.method?.toUpperCase()} ${config.url}`);
+  
+  // Wait before retrying
+  await new Promise(resolve => setTimeout(resolve, config.retryDelay * config.__retryCount));
+  
+  // Create new axios instance to avoid interceptor loops
+  return axios(config);
+};
+
+// Add response interceptor to handle auth errors and retries
 api.interceptors.response.use(
   (response) => {
     console.log('API Response:', response.status, response.config.method?.toUpperCase(), response.config.url);
     return response;
   },
-  (error) => {
+  async (error) => {
     console.log('API Response Error:', error.response?.status, error.config?.method?.toUpperCase(), error.config?.url);
     console.log('API Response Error Details:', error.response?.data);
     
+    // Handle authentication errors
     if (error.response?.status === 401) {
       console.log('API: 401 error detected');
       
@@ -60,6 +86,18 @@ api.interceptors.response.use(
         console.log('API: 401 error but may not be token-related:', errorMessage);
       }
     }
+    
+    // Handle service unavailable errors with retry
+    if (error.response?.status === 503 || error.code === 'ECONNABORTED' || !error.response) {
+      console.log('API: Service unavailable or timeout, attempting retry...');
+      try {
+        return await retryRequest(error);
+      } catch (retryError) {
+        console.log('API: All retry attempts failed');
+        return Promise.reject(retryError);
+      }
+    }
+    
     return Promise.reject(error);
   }
 );
