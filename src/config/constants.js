@@ -27,8 +27,10 @@ export const getImageURL = (imagePath) => {
   return `${SERVER_BASE_URL}${imagePath}`;
 };
 
-export default {
+const constants = {
   API_BASE_URL,
   SERVER_BASE_URL,
   getImageURL
 };
+
+export default constants;

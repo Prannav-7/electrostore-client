@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../api";
 import Header from '../components/Header';
@@ -11,7 +11,7 @@ const ProductDetails = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { addToCart: addToCartContext } = useCart();
-  
+
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -26,40 +26,51 @@ const ProductDetails = () => {
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [addingToWishlist, setAddingToWishlist] = useState(false);
 
+  const fetchProduct = useCallback(async () => {
+    try {
+      const response = await api.get('/products/' + id);
+
+      if (response.data.success) {
+        setProduct(response.data.data);
+      } else {
+        setProduct(response.data);
+      }
+
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching product:", error);
+      setLoading(false);
+    }
+  }, [id]);
+
+  const fetchReviews = useCallback(async () => {
+    try {
+      const response = await api.get(`/reviews/product/${id}`);
+      console.log('Reviews response:', response.data);
+      setUserReviews(response.data.reviews || []);
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+    }
+  }, [id]);
+
+  // Wishlist functions
+  const checkWishlistStatus = useCallback(async () => {
+    if (isAuthenticated) {
+      try {
+        const response = await api.get('/wishlist');
+        const wishlistItems = response.data.items || [];
+        setIsInWishlist(wishlistItems.some(item => item.product._id === id));
+      } catch (error) {
+        console.error('Error checking wishlist status:', error);
+      }
+    }
+  }, [id, isAuthenticated]);
+
   useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const response = await api.get('/products/' + id);
-        
-        if (response.data.success) {
-          setProduct(response.data.data);
-        } else {
-          setProduct(response.data);
-        }
-        
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching product:", error);
-        setLoading(false);
-      }
-    };
-
-
-
-    const fetchReviews = async () => {
-      try {
-        const response = await api.get(`/reviews/product/${id}`);
-        console.log('Reviews response:', response.data);
-        setUserReviews(response.data.reviews || []);
-      } catch (error) {
-        console.error("Error fetching reviews:", error);
-      }
-    };
-
     fetchProduct();
     fetchReviews();
     checkWishlistStatus();
-  }, [id, isAuthenticated]);
+  }, [fetchProduct, fetchReviews, checkWishlistStatus]);
 
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
@@ -71,7 +82,7 @@ const ProductDetails = () => {
     setAddingToCart(true);
     try {
       const success = await addToCartContext(id, quantity);
-      
+
       if (success) {
         alert('Product added to cart successfully!');
       } else {
@@ -95,7 +106,7 @@ const ProductDetails = () => {
       formData.append('rating', reviewRating);
       formData.append('title', `Review for ${product.name}`);
       formData.append('comment', reviewText);
-      
+
       console.log('Submitting review with:');
       console.log('Product ID:', id);
       console.log('Rating:', reviewRating);
@@ -103,7 +114,7 @@ const ProductDetails = () => {
       console.log('Images count:', reviewImages.length);
       console.log('Auth token:', localStorage.getItem('token') ? 'Present' : 'Missing');
       console.log('User authenticated:', isAuthenticated);
-      
+
       reviewImages.forEach((image, index) => {
         formData.append('images', image);
         console.log(`Image ${index}:`, image.name, image.size, 'bytes');
@@ -120,7 +131,7 @@ const ProductDetails = () => {
       setReviewText('');
       setReviewRating(5);
       setReviewImages([]);
-      
+
       // Refresh reviews
       const reviewsResponse = await api.get(`/reviews/product/${id}`);
       setUserReviews(reviewsResponse.data.reviews || []);
@@ -129,7 +140,7 @@ const ProductDetails = () => {
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
       console.error('Error headers:', error.response?.headers);
-      
+
       let errorMessage = 'Error submitting review: ';
       if (error.response?.status === 401) {
         errorMessage += 'Please login again. Your session may have expired.';
@@ -140,7 +151,7 @@ const ProductDetails = () => {
       } else {
         errorMessage += error.response?.data?.message || error.message;
       }
-      
+
       alert(errorMessage);
     }
   };
@@ -158,18 +169,7 @@ const ProductDetails = () => {
     setReviewImages(reviewImages.filter((_, i) => i !== index));
   };
 
-  // Wishlist functions
-  const checkWishlistStatus = async () => {
-    if (isAuthenticated) {
-      try {
-        const response = await api.get('/wishlist');
-        const wishlistItems = response.data.items || [];
-        setIsInWishlist(wishlistItems.some(item => item.product._id === id));
-      } catch (error) {
-        console.error('Error checking wishlist status:', error);
-      }
-    }
-  };
+  // Wishlist functions moved up to avoid use-before-define warning
 
   const handleWishlistToggle = async () => {
     if (!isAuthenticated) {
@@ -210,12 +210,12 @@ const ProductDetails = () => {
     try {
       setAddingToCart(true);
       console.log('Buy Now: Adding to cart...');
-      
+
       // Add product to cart first
       const success = await addToCartContext(id, quantity);
-      
+
       console.log('Buy Now: Add to cart result:', success);
-      
+
       if (success) {
         console.log('Buy Now: Successfully added to cart, redirecting to checkout...');
         // Redirect to checkout page
@@ -226,7 +226,7 @@ const ProductDetails = () => {
       }
     } catch (error) {
       console.error("Buy Now: Error occurred:", error);
-      
+
       // Check if it's an authentication error
       if (error.response && error.response.status === 401) {
         alert('Your session has expired. Please log in again.');
@@ -270,8 +270,8 @@ const ProductDetails = () => {
     return (
       <div className="flipkart-style-page">
         <Header />
-        <div style={{ 
-          textAlign: 'center', 
+        <div style={{
+          textAlign: 'center',
           padding: '50px',
           background: '#f1f3f6',
           minHeight: 'calc(100vh - 80px)'
@@ -286,14 +286,14 @@ const ProductDetails = () => {
     return (
       <div className="flipkart-style-page">
         <Header />
-        <div style={{ 
-          textAlign: 'center', 
+        <div style={{
+          textAlign: 'center',
           padding: '50px',
           background: '#f1f3f6',
           minHeight: 'calc(100vh - 80px)'
         }}>
           <h2>Product not found</h2>
-          <button 
+          <button
             onClick={() => navigate('/products')}
             style={{
               marginTop: '20px',
@@ -320,19 +320,19 @@ const ProductDetails = () => {
   return (
     <div className="flipkart-style-page">
       <Header />
-      
+
       <div className="flipkart-container">
         {/* Breadcrumb */}
         <div className="flipkart-breadcrumb">
-          <span 
-            className="breadcrumb-link" 
+          <span
+            className="breadcrumb-link"
             onClick={() => navigate('/')}
           >
             Home
           </span>
           <span> &gt; </span>
-          <span 
-            className="breadcrumb-link" 
+          <span
+            className="breadcrumb-link"
             onClick={() => navigate('/products')}
           >
             Products
@@ -361,7 +361,7 @@ const ProductDetails = () => {
                   />
                 ))}
               </div>
-              
+
               <div className="flipkart-main-image">
                 <img
                   src={productImages[selectedImageIndex]}
@@ -371,7 +371,7 @@ const ProductDetails = () => {
                   }}
                 />
                 <div className="flipkart-image-actions">
-                  <button 
+                  <button
                     className={`flipkart-wishlist-btn ${isInWishlist ? 'active' : ''}`}
                     onClick={handleWishlistToggle}
                     disabled={addingToWishlist}
@@ -389,7 +389,7 @@ const ProductDetails = () => {
             </div>
 
             <div className="flipkart-action-buttons">
-              <button 
+              <button
                 className="flipkart-add-to-cart"
                 onClick={handleAddToCart}
                 disabled={addingToCart}
@@ -397,7 +397,7 @@ const ProductDetails = () => {
                 <span>🛒</span>
                 {addingToCart ? 'Adding...' : 'Add to Cart'}
               </button>
-              <button 
+              <button
                 className="flipkart-buy-now"
                 onClick={handleBuyNow}
                 disabled={addingToCart}
@@ -415,7 +415,7 @@ const ProductDetails = () => {
           {/* Info Section */}
           <div className="flipkart-info-section">
             <h1 className="flipkart-title">{product.name}</h1>
-            
+
             <div className="flipkart-rating-section">
               <div className="flipkart-rating-badge">
                 <span className="rating-value">
@@ -444,14 +444,14 @@ const ProductDetails = () => {
               <span className="quantity-label">Quantity</span>
               <div className="quantity-controls">
                 <div className="quantity-selector">
-                  <button 
+                  <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     disabled={quantity <= 1}
                   >
                     −
                   </button>
                   <span className="quantity-value">{quantity}</span>
-                  <button 
+                  <button
                     onClick={() => setQuantity(quantity + 1)}
                   >
                     +
@@ -494,19 +494,19 @@ const ProductDetails = () => {
         {/* Details Section with Tabs */}
         <div className="flipkart-details-section">
           <div className="flipkart-tabs">
-            <button 
+            <button
               className={`flipkart-tab ${activeTab === 'description' ? 'active' : ''}`}
               onClick={() => setActiveTab('description')}
             >
               Description
             </button>
-            <button 
+            <button
               className={`flipkart-tab ${activeTab === 'specifications' ? 'active' : ''}`}
               onClick={() => setActiveTab('specifications')}
             >
               Specifications
             </button>
-            <button 
+            <button
               className={`flipkart-tab ${activeTab === 'reviews' ? 'active' : ''}`}
               onClick={() => setActiveTab('reviews')}
             >
@@ -521,7 +521,7 @@ const ProductDetails = () => {
                 <div className="description-content">
                   <p>{product.description || 'High-quality electrical product designed for reliable performance and safety. This product meets all industry standards and comes with manufacturer warranty.'}</p>
                 </div>
-                
+
                 <div className="feature-highlights">
                   <h4>Key Features</h4>
                   <ul>
@@ -600,14 +600,14 @@ const ProductDetails = () => {
                     </div>
                   </div>
                   {isAuthenticated ? (
-                    <button 
+                    <button
                       className="write-review-btn"
                       onClick={() => setShowReviewModal(true)}
                     >
                       Write Review
                     </button>
                   ) : (
-                    <button 
+                    <button
                       className="write-review-btn login-prompt"
                       onClick={() => navigate('/login')}
                     >
@@ -656,7 +656,7 @@ const ProductDetails = () => {
                                 } else {
                                   imageSrc = `http://localhost:5000/uploads/reviews/${img}`;
                                 }
-                                
+
                                 return (
                                   <img
                                     key={imgIndex}
@@ -720,11 +720,11 @@ const ProductDetails = () => {
             overflow: 'auto'
           }}>
             <h3>Write a Review</h3>
-            
+
             <div style={{ margin: '16px 0' }}>
               <label>Rating:</label>
-              <StarRating 
-                rating={reviewRating} 
+              <StarRating
+                rating={reviewRating}
                 onRatingChange={setReviewRating}
               />
             </div>
@@ -755,7 +755,7 @@ const ProductDetails = () => {
                 onChange={handleImageUpload}
                 style={{ margin: '8px 0' }}
               />
-              
+
               {reviewImages.length > 0 && (
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
                   {reviewImages.map((img, index) => (

@@ -15,21 +15,21 @@ const CustomerOrders = () => {
   const fetchOrdersData = useCallback(async (page = 1) => {
     try {
       setLoading(true);
-      
+
       // Build query parameters more explicitly
       const queryParams = new URLSearchParams({
         page: page.toString(),
         limit: '20'
       });
-      
+
       // Add filters only if they have values
       if (filters.status) queryParams.set('status', filters.status);
       if (filters.paymentMethod) queryParams.set('paymentMethod', filters.paymentMethod);
       if (filters.startDate) queryParams.set('startDate', filters.startDate);
       if (filters.endDate) queryParams.set('endDate', filters.endDate);
-      
+
       console.log('Fetching orders with params:', queryParams.toString());
-      
+
       const response = await api.get(`/orders/admin/all-orders?${queryParams}`);
       if (response.data?.success) {
         setOrdersData(response.data.data);
@@ -61,13 +61,13 @@ const CustomerOrders = () => {
         // Update the local order data
         setOrdersData(prevData => ({
           ...prevData,
-          orders: prevData.orders.map(order => 
-            order._id === orderId 
+          orders: prevData.orders.map(order =>
+            order._id === orderId
               ? { ...order, status: newStatus }
               : order
           )
         }));
-        
+
         alert(`✅ Order status updated to ${newStatus.charAt(0).toUpperCase() + newStatus.slice(1)}`);
       }
     } catch (error) {
@@ -103,30 +103,7 @@ const CustomerOrders = () => {
     setCurrentPage(1);
   };
 
-  const getStatusBadge = (status) => {
-    const statusStyles = {
-      pending: { bg: '#fff3cd', color: '#856404', text: '⏳ Pending' },
-      confirmed: { bg: '#d4edda', color: '#155724', text: '✅ Confirmed' },
-      processing: { bg: '#cce7ff', color: '#004085', text: '🔄 Processing' },
-      shipped: { bg: '#e7f3ff', color: '#0056b3', text: '🚚 Shipped' },
-      delivered: { bg: '#d1ecf1', color: '#0c5460', text: '📦 Delivered' },
-      cancelled: { bg: '#f8d7da', color: '#721c24', text: '❌ Cancelled' }
-    };
-
-    const style = statusStyles[status] || statusStyles.pending;
-    return (
-      <span style={{
-        background: style.bg,
-        color: style.color,
-        padding: '4px 8px',
-        borderRadius: '12px',
-        fontSize: '12px',
-        fontWeight: '600'
-      }}>
-        {style.text}
-      </span>
-    );
-  };
+  // Status Badge function previously here - removed as unused
 
   const getPaymentBadge = (method, status) => {
     const methodStyles = {
@@ -145,9 +122,9 @@ const CustomerOrders = () => {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <span style={{ fontSize: '16px' }}>{methodInfo.icon}</span>
         <span style={{ fontSize: '11px', color: '#6c757d' }}>{methodInfo.name}</span>
-        <span style={{ 
-          fontSize: '10px', 
-          color: statusColor, 
+        <span style={{
+          fontSize: '10px',
+          color: statusColor,
           fontWeight: '600',
           textTransform: 'capitalize'
         }}>
@@ -210,7 +187,7 @@ const CustomerOrders = () => {
             </span>
           )}
         </h2>
-        
+
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -339,11 +316,11 @@ const CustomerOrders = () => {
           border: '1px solid rgba(255, 255, 255, 0.2)',
           boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
         }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            marginBottom: '20px' 
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '20px'
           }}>
             <h3 style={{ fontSize: '1.5rem', fontWeight: '700', margin: 0, color: '#2c3e50' }}>
               📋 Order Details ({ordersData.pagination.totalOrders} total)
@@ -383,7 +360,7 @@ const CustomerOrders = () => {
                           </div>
                         </div>
                       </td>
-                      
+
                       <td style={{ padding: '15px 8px', verticalAlign: 'top' }}>
                         <div>
                           <div style={{ fontWeight: '600', color: '#212529', fontSize: '13px' }}>
@@ -400,7 +377,7 @@ const CustomerOrders = () => {
                           </div>
                         </div>
                       </td>
-                      
+
                       <td style={{ padding: '15px 8px', verticalAlign: 'top' }}>
                         <div style={{ maxWidth: '200px' }}>
                           {order.items.slice(0, 2).map((item, idx) => (
@@ -415,7 +392,7 @@ const CustomerOrders = () => {
                           )}
                         </div>
                       </td>
-                      
+
                       <td style={{ padding: '15px 8px', textAlign: 'center', verticalAlign: 'top' }}>
                         <div style={{ fontWeight: '600', color: '#28a745', fontSize: '14px' }}>
                           ₹{order.orderSummary.total.toLocaleString()}
@@ -424,27 +401,27 @@ const CustomerOrders = () => {
                           Items: {order.orderSummary.itemCount}
                         </div>
                       </td>
-                      
+
                       <td style={{ padding: '15px 8px', textAlign: 'center', verticalAlign: 'top' }}>
                         {getPaymentBadge(order.payment.method, order.payment.status)}
                       </td>
-                      
+
                       <td style={{ padding: '15px 8px', textAlign: 'center', verticalAlign: 'top' }}>
-                        <StatusDropdown 
+                        <StatusDropdown
                           orderId={order._id}
                           currentStatus={order.status}
                           onStatusUpdate={(newStatus) => handleStatusUpdate(order._id, newStatus)}
                         />
                       </td>
-                      
+
                       <td style={{ padding: '15px 8px', textAlign: 'center', verticalAlign: 'top' }}>
                         <div style={{ fontSize: '11px', color: '#495057' }}>
                           {new Date(order.dates.orderDate).toLocaleDateString()}
                         </div>
                         <div style={{ fontSize: '10px', color: '#6c757d' }}>
-                          {new Date(order.dates.orderDate).toLocaleTimeString([], { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
+                          {new Date(order.dates.orderDate).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit'
                           })}
                         </div>
                       </td>
@@ -513,7 +490,7 @@ const CustomerOrders = () => {
 // Status Dropdown Component for Admin
 const StatusDropdown = ({ orderId, currentStatus, onStatusUpdate }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  
+
   const statusOptions = [
     { value: 'pending', label: 'Pending', color: '#ffc107', icon: '⏳' },
     { value: 'confirmed', label: 'Confirmed', color: '#17a2b8', icon: '✅' },

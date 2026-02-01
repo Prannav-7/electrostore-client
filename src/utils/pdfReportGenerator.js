@@ -20,12 +20,12 @@ class PDFReportGenerator {
     this.doc.setFontSize(20);
     this.doc.setFont('helvetica', 'bold');
     this.doc.text('⚡ ELECTROSTORE', 20, 20);
-    
+
     // Company subtitle
     this.doc.setFontSize(12);
     this.doc.setFont('helvetica', 'normal');
     this.doc.text('Jaimaruthi Electricals and Hardware Store', 20, 30);
-    
+
     // Separator line
     this.doc.setLineWidth(0.5);
     this.doc.line(20, 35, 190, 35);
@@ -36,11 +36,11 @@ class PDFReportGenerator {
     this.doc.setFontSize(16);
     this.doc.setFont('helvetica', 'bold');
     this.doc.text(title, 20, 50);
-    
+
     this.doc.setFontSize(10);
     this.doc.setFont('helvetica', 'normal');
     this.doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 60);
-    
+
     if (dateRange) {
       this.doc.text(`Period: ${dateRange}`, 20, 67);
     }
@@ -73,7 +73,7 @@ class PDFReportGenerator {
       this.doc.setFontSize(12);
       this.doc.setFont('helvetica', 'bold');
       this.doc.text('Summary Statistics:', 20, 85);
-      
+
       this.doc.setFontSize(10);
       this.doc.setFont('helvetica', 'normal');
       this.doc.text(`Total Revenue: ₹${totalRevenue.toLocaleString()}`, 25, 95);
@@ -114,10 +114,10 @@ class PDFReportGenerator {
       this.doc.setFontSize(12);
       this.doc.setFont('helvetica', 'bold');
       this.doc.text('Key Performance Indicators:', 20, 85);
-      
+
       this.doc.setFontSize(10);
       this.doc.setFont('helvetica', 'normal');
-      
+
       let yPosition = 95;
       if (analyticsData.totalRevenue) {
         this.doc.text(`Total Revenue: ₹${analyticsData.totalRevenue.toLocaleString()}`, 25, yPosition);
@@ -198,7 +198,7 @@ class PDFReportGenerator {
       this.doc.setFontSize(12);
       this.doc.setFont('helvetica', 'bold');
       this.doc.text('Summary:', 20, 85);
-      
+
       this.doc.setFontSize(10);
       this.doc.setFont('helvetica', 'normal');
       this.doc.text(`Total Revenue: ₹${totalRevenue.toLocaleString()}`, 25, 95);
@@ -244,7 +244,7 @@ class PDFReportGenerator {
     try {
       const today = new Date();
       const todayStr = today.toISOString().split('T')[0];
-      
+
       // Fetch today's orders
       const response = await api.get(`/orders/admin/daily-summary?date=${todayStr}`);
       const dailyData = response.data.data || {};
@@ -256,7 +256,7 @@ class PDFReportGenerator {
       this.doc.setFontSize(12);
       this.doc.setFont('helvetica', 'bold');
       this.doc.text('Daily Summary:', 20, 85);
-      
+
       this.doc.setFontSize(10);
       this.doc.setFont('helvetica', 'normal');
       this.doc.text(`Total Orders: ${dailyData.totalOrders || 0}`, 25, 95);
@@ -304,4 +304,5 @@ class PDFReportGenerator {
   }
 }
 
-export default new PDFReportGenerator();
+const pdfGenerator = new PDFReportGenerator();
+export default pdfGenerator;

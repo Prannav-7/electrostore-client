@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -45,12 +45,12 @@ const ProfessionalSalesAnalytics = () => {
 
   const [timeFrame, setTimeFrame] = useState('7days'); // 7days, 30days, 6months
 
-  useEffect(() => {
-    // Load immediate fallback data so dashboard shows something
+  // Helper functions - defined before use to avoid lint warnings
+  const generateDailyDataFromSales = useCallback((salesData, period) => {
+    const days = period === '7days' ? 7 : period === '30days' ? 30 : 180;
     const labels = [];
     const revenue = [];
     const orders = [];
-    const days = timeFrame === '7days' ? 7 : timeFrame === '30days' ? 30 : 180;
 
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date();
@@ -60,47 +60,317 @@ const ProfessionalSalesAnalytics = () => {
         day: 'numeric'
       }));
 
-      if (i === 0) {
-        // Today's data from our sample orders (₹3,06,700 / 30 days = ~₹10,000/day)
-        revenue.push(10200);
-        orders.push(5);
+      // Use provided data or simulate
+      if (i === 0 && salesData.todayRevenue) {
+        revenue.push(salesData.todayRevenue);
+        orders.push(salesData.todayOrders || 0);
       } else {
-        revenue.push(Math.floor(Math.random() * 8000) + 2000);
-        orders.push(Math.floor(Math.random() * 8) + 2);
+        revenue.push(Math.floor(Math.random() * 2000) + 500);
+        orders.push(Math.floor(Math.random() * 10) + 1);
       }
     }
 
-    const immediateData = {
-      labels, // This is the key fix - ensure labels are available for charts
+    return { labels, revenue, orders };
+  }, []);
+
+  const generateDailyData = useCallback((orders, period) => {
+    const days = period === '7days' ? 7 : period === '30days' ? 30 : 180;
+    const labels = [];
+    const revenue = [];
+    const orderCounts = [];
+
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      labels.push(date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+      }));
+
+      // Filter orders for this specific date
+      const dateStr = date.toISOString().split('T')[0];
+      const dayOrders = orders.filter(order => {
+        const orderDate = new Date(order.createdAt).toISOString().split('T')[0];
+        return orderDate === dateStr;
+      });
+
+      // Calculate daily totals
+      const dailyRevenue = dayOrders.reduce((sum, order) => {
+        return sum + (order.orderSummary?.finalAmount || order.finalAmount || 0);
+      }, 0);
+      const dailyOrderCount = dayOrders.length;
+
+      revenue.push(dailyRevenue);
+      orderCounts.push(dailyOrderCount);
+    }
+
+    return { labels, revenue, orders: orderCounts };
+  }, []);
+
+  const generateRealisticFallbackData = useCallback((period) => {
+    const days = period === '7days' ? 7 : period === '30days' ? 30 : 180;
+    const labels = [];
+    const revenue = [];
+    const orders = [];
+
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      labels.push(date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+      }));
+
+      // Generate realistic electrical store data - matching actual store performance
+      let dailyRevenue, dailyOrders;
+
+      if (i === 0) {
+        // Today's data should match actual sales report (₹5,600)
+        dailyRevenue = 5600;
+        dailyOrders = 8;
+      } else {
+        // Historical data - realistic electrical store performance
+        dailyRevenue = Math.floor(Math.random() * 8000) + 2000; // ₹2k to ₹10k daily
+        dailyOrders = Math.floor(Math.random() * 12) + 2; // 2-14 orders daily
+      }
+
+      revenue.push(dailyRevenue);
+      orders.push(dailyOrders);
+    }
+
+    return {
+      labels,
       revenue,
       orders,
-      totalRevenue: 10200, // Today's realistic sales based on our generated orders
-      totalOrders: 5,
-      avgOrderValue: 2040,
+      totalRevenue: 5600, // Today's actual sales from the report
+      totalOrders: 8, // Today's actual orders
+      averageOrderValue: Math.round(5600 / 8), // ₹700 per order
       topProducts: [
-        { name: 'Crompton LED Bulbs', sales: 3500, units: 25 },
-        { name: 'Havells Table Fan', sales: 2800, units: 4 },
-        { name: 'Anchor Switch Set', sales: 2200, units: 12 },
-        { name: 'Polycab Wire', sales: 1700, units: 8 }
+        { name: 'Crompton Greaves LED Bulbs (9W)', sales: 25400, units: 127 },
+        { name: 'Havells Table Fan (1200mm)', sales: 18750, units: 25 },
+        { name: 'Anchor Switch Socket Set', sales: 15300, units: 85 },
+        { name: 'Polycab Copper Wire (2.5mm)', sales: 12800, units: 45 },
+        { name: 'Orient Ceiling Fan (1200mm)', sales: 11200, units: 16 },
+        { name: 'Ceiling Fans', sales: 18000, units: 60 },
+        { name: 'MCB Switches', sales: 12000, units: 80 },
+        { name: 'Electrical Wire', sales: 8000, units: 200 },
+        { name: 'Power Sockets', sales: 6000, units: 90 }
       ],
       categoryBreakdown: [
-        { category: 'Lighting', value: 35, color: '#4F46E5' },
-        { category: 'Fans', value: 25, color: '#06B6D4' },
-        { category: 'Switches', value: 20, color: '#10B981' },
-        { category: 'Wiring', value: 20, color: '#F59E0B' }
+        { category: 'Lighting', value: 35, color: '#667eea' },
+        { category: 'Fans & Motors', value: 25, color: '#f093fb' },
+        { category: 'Switches & Sockets', value: 20, color: '#4facfe' },
+        { category: 'Wiring & Cables', value: 15, color: '#11998e' },
+        { category: 'Others', value: 5, color: '#ff9a9e' }
       ],
-      loading: false, // Set to false so charts show immediately
-      dataSource: 'sample',
+      loading: false,
+      dataSource: 'sample'
+    };
+  }, []);
+
+  const generateCategoryBreakdown = useCallback((orders) => {
+    const categoryMap = new Map();
+    orders.forEach(order => {
+      if (order.items || order.products) {
+        const items = order.items || order.products;
+        items.forEach(item => {
+          const category = item.category || 'Electrical';
+          const revenue = (item.price || 0) * (item.quantity || 1);
+
+          if (categoryMap.has(category)) {
+            categoryMap.set(category, categoryMap.get(category) + revenue);
+          } else {
+            categoryMap.set(category, revenue);
+          }
+        });
+      }
+    });
+
+    return Array.from(categoryMap.entries()).map(([category, revenue]) => ({
+      category,
+      revenue,
+      percentage: 0 // Will be calculated later
+    }));
+  }, []);
+
+  const generateMonthlyData = useCallback((orders) => {
+    const monthMap = new Map();
+    orders.forEach(order => {
+      const date = new Date(order.createdAt);
+      const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+      const revenue = order.orderSummary?.finalAmount || order.finalAmount || 0;
+
+      if (monthMap.has(monthKey)) {
+        monthMap.set(monthKey, monthMap.get(monthKey) + revenue);
+      } else {
+        monthMap.set(monthKey, revenue);
+      }
+    });
+
+    return Array.from(monthMap.entries()).map(([monthKey, revenue]) => ({
+      month: monthKey,
+      revenue
+    }));
+  }, []);
+
+  const generateDataFromDailySales = useCallback((dailySalesData, timeFrame) => {
+    const todayRevenue = dailySalesData.todayRevenue || 0;
+    const todayOrders = dailySalesData.todayOrders || 0;
+
+    // Generate chart data
+    const chartData = generateDailyDataFromSales(dailySalesData, timeFrame);
+
+    return {
+      labels: chartData.labels,
+      revenue: chartData.revenue,
+      orders: chartData.orders,
+      totalRevenue: todayRevenue,
+      totalOrders: todayOrders,
+      avgOrderValue: todayOrders > 0 ? Math.round(todayRevenue / todayOrders) : 0,
+      topProducts: dailySalesData.topProducts || [],
+      categoryBreakdown: dailySalesData.categoryBreakdown || [],
+      monthlyData: dailySalesData.monthlyData || [],
+      loading: false,
+      dataSource: 'database',
       error: false
     };
+  }, [generateDailyDataFromSales]);
 
-    setSalesData(immediateData);
+  const generateDataFromOrders = useCallback((orders, timeFrame) => {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    // Try to fetch real data in the background
-    fetchAnalyticsData();
-  }, [timeFrame]);
+    // Calculate today's revenue from all orders
+    const todaysOrders = orders.filter(order => {
+      const orderDate = new Date(order.createdAt);
+      return orderDate >= startOfToday;
+    });
 
-  const fetchAnalyticsData = async () => {
+    const todayRevenue = todaysOrders.reduce((sum, order) => {
+      return sum + (order.orderSummary?.finalAmount || order.finalAmount || 0);
+    }, 0);
+
+    // Generate product breakdown
+    const productMap = new Map();
+    todaysOrders.forEach(order => {
+      if (order.items || order.products) {
+        const items = order.items || order.products;
+        items.forEach(item => {
+          const name = item.productName || item.name || 'Unknown Product';
+          const quantity = item.quantity || 1;
+          const price = item.price || 0;
+
+          if (productMap.has(name)) {
+            const existing = productMap.get(name);
+            productMap.set(name, {
+              ...existing,
+              quantity: existing.quantity + quantity,
+              revenue: existing.revenue + (price * quantity)
+            });
+          } else {
+            productMap.set(name, {
+              name,
+              quantity,
+              revenue: price * quantity
+            });
+          }
+        });
+      }
+    });
+
+    const topProducts = Array.from(productMap.values())
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5);
+
+    // Generate chart data
+    const chartData = generateDailyData(orders, timeFrame);
+
+    return {
+      labels: chartData.labels,
+      revenue: chartData.revenue,
+      orders: chartData.orders,
+      totalRevenue: todayRevenue,
+      totalOrders: todaysOrders.length,
+      avgOrderValue: todaysOrders.length > 0 ? Math.round(todayRevenue / todaysOrders.length) : 0,
+      topProducts,
+      categoryBreakdown: generateCategoryBreakdown(orders),
+      monthlyData: generateMonthlyData(orders),
+      loading: false,
+      dataSource: 'database',
+      error: false
+    };
+  }, [generateDailyData, generateCategoryBreakdown, generateMonthlyData]);
+
+  const processRealData = useCallback((salesAnalytics, monthlyComparison, topProducts, categoryBreakdown, allOrders, period) => {
+    try {
+      // Process orders data by time period
+      const days = period === '7days' ? 7 : period === '30days' ? 30 : 180;
+      const labels = [];
+      const revenue = [];
+      const orders = [];
+
+      // Create date range for the selected period
+      for (let i = days - 1; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        labels.push(date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric'
+        }));
+
+        // Filter orders for this specific date
+        const dateStr = date.toISOString().split('T')[0];
+        const dayOrders = allOrders.filter(order => {
+          const orderDate = new Date(order.createdAt).toISOString().split('T')[0];
+          return orderDate === dateStr;
+        });
+
+        // Calculate daily totals
+        const dailyRevenue = dayOrders.reduce((sum, order) => sum + (order.orderSummary?.total || 0), 0);
+        const dailyOrderCount = dayOrders.length;
+
+        revenue.push(dailyRevenue);
+        orders.push(dailyOrderCount);
+      }
+
+      // Process top products (convert sales data)
+      const processedTopProducts = topProducts.slice(0, 5).map(product => ({
+        name: product.name || product.productName || 'Unknown Product',
+        sales: product.totalSales || product.revenue || 0,
+        units: product.totalQuantity || product.quantity || 0
+      }));
+
+      // Process category breakdown with colors
+      const colors = ['#667eea', '#f093fb', '#4facfe', '#11998e', '#ff9a9e', '#ffd93d', '#6bcf7f'];
+      const processedCategoryBreakdown = categoryBreakdown.slice(0, 7).map((category, index) => ({
+        category: category.category || category._id || 'Unknown',
+        value: category.percentage || Math.round((category.totalSales / salesAnalytics.totalRevenue) * 100) || 0,
+        color: colors[index] || '#667eea'
+      }));
+
+      return {
+        labels,
+        revenue,
+        orders,
+        topProducts: processedTopProducts,
+        categoryBreakdown: processedCategoryBreakdown,
+        loading: false,
+        dataSource: 'real',
+        totalRevenue: salesAnalytics.totalRevenue || revenue.reduce((a, b) => a + b, 0),
+        totalOrders: salesAnalytics.totalOrders || orders.reduce((a, b) => a + b, 0),
+        averageOrderValue: salesAnalytics.averageOrderValue ||
+          (orders.reduce((a, b) => a + b, 0) > 0 ?
+            Math.round(revenue.reduce((a, b) => a + b, 0) / orders.reduce((a, b) => a + b, 0)) : 0)
+      };
+    } catch (error) {
+      console.error('Error processing real data:', error);
+      return generateRealisticFallbackData(period);
+    }
+  }, [generateRealisticFallbackData]);
+
+
+
+  const fetchAnalyticsData = useCallback(async () => {
     try {
       console.log('🔄 Starting analytics data fetch...');
       setSalesData(prev => ({ ...prev, loading: true }));
@@ -189,342 +459,57 @@ const ProfessionalSalesAnalytics = () => {
     } finally {
       setSalesData(prev => ({ ...prev, loading: false }));
     }
-  };
+  }, [timeFrame, generateDataFromDailySales, generateDataFromOrders, generateRealisticFallbackData, processRealData]);
 
-  // Generate data from daily sales endpoint
-  const generateDataFromDailySales = (dailySalesData, timeFrame) => {
-    const todayRevenue = dailySalesData.todayRevenue || 0;
-    const todayOrders = dailySalesData.todayOrders || 0;
-
-    // Generate chart data
-    const chartData = generateDailyDataFromSales(dailySalesData, timeFrame);
-
-    return {
-      labels: chartData.labels, // Fix: include labels for charts
-      revenue: chartData.revenue, // Fix: include revenue array for charts
-      orders: chartData.orders, // Fix: include orders array for charts
-      totalRevenue: todayRevenue,
-      totalOrders: todayOrders,
-      avgOrderValue: todayOrders > 0 ? Math.round(todayRevenue / todayOrders) : 0,
-      topProducts: dailySalesData.topProducts || [],
-      categoryBreakdown: dailySalesData.categoryBreakdown || [],
-      monthlyData: dailySalesData.monthlyData || [],
-      loading: false,
-      dataSource: 'database',
-      error: false
-    };
-  };
-
-  // Generate data from orders array
-  const generateDataFromOrders = (orders, timeFrame) => {
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-    // Calculate today's revenue from all orders
-    const todaysOrders = orders.filter(order => {
-      const orderDate = new Date(order.createdAt);
-      return orderDate >= startOfToday;
-    });
-
-    const todayRevenue = todaysOrders.reduce((sum, order) => {
-      return sum + (order.orderSummary?.finalAmount || order.finalAmount || 0);
-    }, 0);
-
-    // Generate product breakdown
-    const productMap = new Map();
-    todaysOrders.forEach(order => {
-      if (order.items || order.products) {
-        const items = order.items || order.products;
-        items.forEach(item => {
-          const name = item.productName || item.name || 'Unknown Product';
-          const quantity = item.quantity || 1;
-          const price = item.price || 0;
-
-          if (productMap.has(name)) {
-            const existing = productMap.get(name);
-            productMap.set(name, {
-              ...existing,
-              quantity: existing.quantity + quantity,
-              revenue: existing.revenue + (price * quantity)
-            });
-          } else {
-            productMap.set(name, {
-              name,
-              quantity,
-              revenue: price * quantity
-            });
-          }
-        });
-      }
-    });
-
-    const topProducts = Array.from(productMap.values())
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 5);
-
-    // Generate chart data
-    const chartData = generateDailyData(orders, timeFrame);
-
-    return {
-      labels: chartData.labels, // Fix: include labels for charts
-      revenue: chartData.revenue, // Fix: include revenue array for charts
-      orders: chartData.orders, // Fix: include orders array for charts
-      totalRevenue: todayRevenue,
-      totalOrders: todaysOrders.length,
-      avgOrderValue: todaysOrders.length > 0 ? Math.round(todayRevenue / todaysOrders.length) : 0,
-      topProducts,
-      categoryBreakdown: generateCategoryBreakdown(orders),
-      monthlyData: generateMonthlyData(orders),
-      loading: false,
-      dataSource: 'database',
-      error: false
-    };
-  };
-
-  const processRealData = (salesAnalytics, monthlyComparison, topProducts, categoryBreakdown, allOrders, period) => {
-    try {
-      // Process orders data by time period
-      const days = period === '7days' ? 7 : period === '30days' ? 30 : 180;
-      const labels = [];
-      const revenue = [];
-      const orders = [];
-
-      // Create date range for the selected period
-      for (let i = days - 1; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        labels.push(date.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric'
-        }));
-
-        // Filter orders for this specific date
-        const dateStr = date.toISOString().split('T')[0];
-        const dayOrders = allOrders.filter(order => {
-          const orderDate = new Date(order.createdAt).toISOString().split('T')[0];
-          return orderDate === dateStr;
-        });
-
-        // Calculate daily totals
-        const dailyRevenue = dayOrders.reduce((sum, order) => sum + (order.orderSummary?.total || 0), 0);
-        const dailyOrderCount = dayOrders.length;
-
-        revenue.push(dailyRevenue);
-        orders.push(dailyOrderCount);
-      }
-
-      // Process top products (convert sales data)
-      const processedTopProducts = topProducts.slice(0, 5).map(product => ({
-        name: product.name || product.productName || 'Unknown Product',
-        sales: product.totalSales || product.revenue || 0,
-        units: product.totalQuantity || product.quantity || 0
-      }));
-
-      // Process category breakdown with colors
-      const colors = ['#667eea', '#f093fb', '#4facfe', '#11998e', '#ff9a9e', '#ffd93d', '#6bcf7f'];
-      const processedCategoryBreakdown = categoryBreakdown.slice(0, 7).map((category, index) => ({
-        category: category.category || category._id || 'Unknown',
-        value: category.percentage || Math.round((category.totalSales / salesAnalytics.totalRevenue) * 100) || 0,
-        color: colors[index] || '#667eea'
-      }));
-
-      return {
-        labels,
-        revenue,
-        orders,
-        topProducts: processedTopProducts,
-        categoryBreakdown: processedCategoryBreakdown,
-        loading: false,
-        dataSource: 'real',
-        totalRevenue: salesAnalytics.totalRevenue || revenue.reduce((a, b) => a + b, 0),
-        totalOrders: salesAnalytics.totalOrders || orders.reduce((a, b) => a + b, 0),
-        averageOrderValue: salesAnalytics.averageOrderValue ||
-          (orders.reduce((a, b) => a + b, 0) > 0 ?
-            Math.round(revenue.reduce((a, b) => a + b, 0) / orders.reduce((a, b) => a + b, 0)) : 0)
-      };
-    } catch (error) {
-      console.error('Error processing real data:', error);
-      return generateRealisticFallbackData(period);
-    }
-  };
-
-  // Generate category breakdown from orders
-  const generateCategoryBreakdown = (orders) => {
-    const categoryMap = new Map();
-    orders.forEach(order => {
-      if (order.items || order.products) {
-        const items = order.items || order.products;
-        items.forEach(item => {
-          const category = item.category || 'Electrical';
-          const revenue = (item.price || 0) * (item.quantity || 1);
-
-          if (categoryMap.has(category)) {
-            categoryMap.set(category, categoryMap.get(category) + revenue);
-          } else {
-            categoryMap.set(category, revenue);
-          }
-        });
-      }
-    });
-
-    return Array.from(categoryMap.entries()).map(([category, revenue]) => ({
-      category,
-      revenue,
-      percentage: 0 // Will be calculated later
-    }));
-  };
-
-  // Generate monthly data from orders
-  const generateMonthlyData = (orders) => {
-    const monthMap = new Map();
-    orders.forEach(order => {
-      const date = new Date(order.createdAt);
-      const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
-      const revenue = order.orderSummary?.finalAmount || order.finalAmount || 0;
-
-      if (monthMap.has(monthKey)) {
-        monthMap.set(monthKey, monthMap.get(monthKey) + revenue);
-      } else {
-        monthMap.set(monthKey, revenue);
-      }
-    });
-
-    return Array.from(monthMap.entries()).map(([monthKey, revenue]) => ({
-      month: monthKey,
-      revenue
-    }));
-  };
-
-  // Generate daily data from orders array
-  const generateDailyData = (orders, period) => {
-    const days = period === '7days' ? 7 : period === '30days' ? 30 : 180;
+  useEffect(() => {
+    // Load immediate fallback data so dashboard shows something
     const labels = [];
     const revenue = [];
-    const orderCounts = [];
+    const ordersArray = [];
 
+    const days = timeFrame === '7days' ? 7 : timeFrame === '30days' ? 30 : 180;
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-      labels.push(date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric'
-      }));
-
-      // Filter orders for this specific date
-      const dateStr = date.toISOString().split('T')[0];
-      const dayOrders = orders.filter(order => {
-        const orderDate = new Date(order.createdAt).toISOString().split('T')[0];
-        return orderDate === dateStr;
-      });
-
-      // Calculate daily totals
-      const dailyRevenue = dayOrders.reduce((sum, order) => {
-        return sum + (order.orderSummary?.finalAmount || order.finalAmount || 0);
-      }, 0);
-      const dailyOrderCount = dayOrders.length;
-
-      revenue.push(dailyRevenue);
-      orderCounts.push(dailyOrderCount);
+      labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+      revenue.push(0);
+      ordersArray.push(0);
     }
 
-    return { labels, revenue, orders: orderCounts };
-  };
-
-  // Generate daily data from sales data
-  const generateDailyDataFromSales = (salesData, period) => {
-    const days = period === '7days' ? 7 : period === '30days' ? 30 : 180;
-    const labels = [];
-    const revenue = [];
-    const orders = [];
-
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      labels.push(date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric'
-      }));
-
-      // Use provided data or simulate
-      if (i === 0 && salesData.todayRevenue) {
-        revenue.push(salesData.todayRevenue);
-        orders.push(salesData.todayOrders || 0);
-      } else {
-        revenue.push(Math.floor(Math.random() * 2000) + 500);
-        orders.push(Math.floor(Math.random() * 10) + 1);
-      }
-    }
-
-    return { labels, revenue, orders };
-  };
-
-  const generateRealisticFallbackData = (period) => {
-    const days = period === '7days' ? 7 : period === '30days' ? 30 : 180;
-    const labels = [];
-    const revenue = [];
-    const orders = [];
-
-    let totalRevenue = 0;
-    let totalOrders = 0;
-
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      labels.push(date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric'
-      }));
-
-      // Generate realistic electrical store data - matching actual store performance
-      let dailyRevenue, dailyOrders;
-
-      if (i === 0) {
-        // Today's data should match actual sales report (₹5,600)
-        dailyRevenue = 5600;
-        dailyOrders = 8;
-      } else {
-        // Historical data - realistic electrical store performance
-        dailyRevenue = Math.floor(Math.random() * 8000) + 2000; // ₹2k to ₹10k daily
-        dailyOrders = Math.floor(Math.random() * 12) + 2; // 2-14 orders daily
-      }
-
-      revenue.push(dailyRevenue);
-      orders.push(dailyOrders);
-      totalRevenue += dailyRevenue;
-      totalOrders += dailyOrders;
-    }
-
-    // const avgOrderValue = Math.round(totalRevenue / totalOrders);
-
-    return {
+    const immediateData = {
       labels,
       revenue,
-      orders,
-      totalRevenue: 5600, // Today's actual sales from the report
-      totalOrders: 8, // Today's actual orders
-      averageOrderValue: Math.round(5600 / 8), // ₹700 per order
+      orders: ordersArray,
+      totalRevenue: 10200, // Today's realistic sales based on our generated orders
+      totalOrders: 5,
+      avgOrderValue: 2040,
       topProducts: [
-        { name: 'Crompton Greaves LED Bulbs (9W)', sales: 25400, units: 127 },
-        { name: 'Havells Table Fan (1200mm)', sales: 18750, units: 25 },
-        { name: 'Anchor Switch Socket Set', sales: 15300, units: 85 },
-        { name: 'Polycab Copper Wire (2.5mm)', sales: 12800, units: 45 },
-        { name: 'Orient Ceiling Fan (1200mm)', sales: 11200, units: 16 },
-        { name: 'Ceiling Fans', sales: 18000, units: 60 },
-        { name: 'MCB Switches', sales: 12000, units: 80 },
-        { name: 'Electrical Wire', sales: 8000, units: 200 },
-        { name: 'Power Sockets', sales: 6000, units: 90 }
+        { name: 'Crompton LED Bulbs', sales: 3500, units: 25 },
+        { name: 'Havells Table Fan', sales: 2800, units: 4 },
+        { name: 'Anchor Switch Set', sales: 2200, units: 12 },
+        { name: 'Polycab Wire', sales: 1700, units: 8 }
       ],
       categoryBreakdown: [
-        { category: 'Lighting', value: 35, color: '#667eea' },
-        { category: 'Fans & Motors', value: 25, color: '#f093fb' },
-        { category: 'Switches & Sockets', value: 20, color: '#4facfe' },
-        { category: 'Wiring & Cables', value: 15, color: '#11998e' },
-        { category: 'Others', value: 5, color: '#ff9a9e' }
+        { category: 'Lighting', value: 35, color: '#4F46E5' },
+        { category: 'Fans', value: 25, color: '#06B6D4' },
+        { category: 'Switches', value: 20, color: '#10B981' },
+        { category: 'Wiring', value: 20, color: '#F59E0B' }
       ],
-      loading: false,
-      dataSource: 'sample'
+      loading: false, // Set to false so charts show immediately
+      dataSource: 'sample',
+      error: false
     };
-  };
+
+    setSalesData(immediateData);
+
+    // Try to fetch real data in the background
+    fetchAnalyticsData();
+  }, [timeFrame, fetchAnalyticsData]);
+
+  // Generate data from daily sales endpoint
+  // Helper functions moved up to avoid use-before-define warning
+
+  // Moved generatedRealisticFallbackData up to avoid no-use-before-define warning
 
   // Modern chart configurations
   const chartOptions = {
@@ -590,25 +575,6 @@ const ProfessionalSalesAnalytics = () => {
         pointRadius: 6,
         pointHoverRadius: 8,
         tension: 0.4
-      }
-    ]
-  };
-
-  // Orders Chart Data
-  const ordersChartData = {
-    labels: salesData.labels || [],
-    datasets: [
-      {
-        label: 'Orders',
-        data: salesData.orders || [],
-        backgroundColor: [
-          '#667eea', '#f093fb', '#4facfe', '#11998e', '#ff9a9e',
-          '#667eea', '#f093fb', '#4facfe', '#11998e', '#ff9a9e'
-        ],
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-        borderWidth: 1,
-        borderRadius: 6,
-        borderSkipped: false,
       }
     ]
   };

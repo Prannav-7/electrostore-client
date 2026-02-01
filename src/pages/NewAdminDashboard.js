@@ -36,6 +36,20 @@ const NewAdminDashboard = () => {
     'Safety Equipment'
   ];
 
+  const calculateStats = useCallback((productsData) => {
+    const totalProducts = productsData.length;
+    const totalValue = productsData.reduce((sum, product) => sum + (product.price * product.stock), 0);
+    const lowStock = productsData.filter(product => product.stock > 0 && product.stock <= 10).length;
+    const outOfStock = productsData.filter(product => product.stock === 0).length;
+
+    setStats({
+      totalProducts,
+      totalValue,
+      lowStock,
+      outOfStock
+    });
+  }, []);
+
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
@@ -56,7 +70,7 @@ const NewAdminDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [calculateStats]);
 
   // Redirect if not admin
   useEffect(() => {
@@ -66,20 +80,6 @@ const NewAdminDashboard = () => {
     }
     fetchProducts();
   }, [isAdmin, navigate, fetchProducts]);
-
-  const calculateStats = (productsData) => {
-    const totalProducts = productsData.length;
-    const totalValue = productsData.reduce((sum, product) => sum + (product.price * product.stock), 0);
-    const lowStock = productsData.filter(product => product.stock > 0 && product.stock <= 10).length;
-    const outOfStock = productsData.filter(product => product.stock === 0).length;
-
-    setStats({
-      totalProducts,
-      totalValue,
-      lowStock,
-      outOfStock
-    });
-  };
 
   const handleDeleteProduct = async (productId, productName) => {
     const confirmMessage = `Are you sure you want to delete "${productName}"?\\n\\nType "DELETE" to confirm:`;

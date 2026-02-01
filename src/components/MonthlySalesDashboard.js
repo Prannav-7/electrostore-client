@@ -15,7 +15,7 @@ const MonthlySalesDashboard = () => {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  const fetchMonthlyData = async (year = selectedYear, month = selectedMonth) => {
+  const fetchMonthlyData = useCallback(async (year = selectedYear, month = selectedMonth) => {
     try {
       setLoading(true);
       const response = await api.get(`/orders/admin/monthly-summary?year=${year}&month=${month}`);
@@ -28,25 +28,25 @@ const MonthlySalesDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedYear, selectedMonth]);
 
-  const fetchComparisonData = async () => {
+  const fetchComparisonData = useCallback(async () => {
     try {
       setLoading(true);
       const currentMonthPromise = api.get(`/orders/admin/monthly-summary?year=${selectedYear}&month=${selectedMonth}`);
-      const previousMonthPromise = selectedMonth === 1 
+      const previousMonthPromise = selectedMonth === 1
         ? api.get(`/orders/admin/monthly-summary?year=${selectedYear - 1}&month=12`)
         : api.get(`/orders/admin/monthly-summary?year=${selectedYear}&month=${selectedMonth - 1}`);
-      
+
       const [currentResponse, previousResponse] = await Promise.all([currentMonthPromise, previousMonthPromise]);
-      
+
       if (currentResponse.data?.success && previousResponse.data?.success) {
         setComparisonData({
           current: currentResponse.data.data,
           previous: previousResponse.data.data,
           currentPeriod: `${months[selectedMonth - 1]} ${selectedYear}`,
-          previousPeriod: selectedMonth === 1 
-            ? `December ${selectedYear - 1}` 
+          previousPeriod: selectedMonth === 1
+            ? `December ${selectedYear - 1}`
             : `${months[selectedMonth - 2]} ${selectedYear}`
         });
       }
@@ -56,7 +56,7 @@ const MonthlySalesDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedYear, selectedMonth, months]);
 
   useEffect(() => {
     if (viewMode === 'current') {
@@ -64,7 +64,7 @@ const MonthlySalesDashboard = () => {
     } else {
       fetchComparisonData();
     }
-  }, [selectedMonth, selectedYear, viewMode]);
+  }, [selectedMonth, selectedYear, viewMode, fetchMonthlyData, fetchComparisonData]);
 
   const calculateGrowth = (current, previous) => {
     if (!previous || previous === 0) return 0;
@@ -79,11 +79,11 @@ const MonthlySalesDashboard = () => {
     if (!dailySummary || dailySummary.length === 0) {
       return { totalOrders: 0, totalRevenue: 0, avgOrderValue: 0 };
     }
-    
+
     const totalOrders = dailySummary.reduce((sum, day) => sum + day.totalOrders, 0);
     const totalRevenue = dailySummary.reduce((sum, day) => sum + day.totalRevenue, 0);
     const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-    
+
     return { totalOrders, totalRevenue, avgOrderValue };
   };
 
@@ -137,13 +137,13 @@ const MonthlySalesDashboard = () => {
           <h2 style={{ fontSize: '2rem', fontWeight: '700', margin: 0, color: '#2c3e50' }}>
             📈 Monthly Sales Analytics
           </h2>
-          
+
           {/* View Mode Toggle */}
           <div style={{ display: 'flex', gap: '10px' }}>
             <button
               onClick={() => setViewMode('current')}
               style={{
-                background: viewMode === 'current' 
+                background: viewMode === 'current'
                   ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
                   : 'transparent',
                 color: viewMode === 'current' ? 'white' : '#667eea',
@@ -161,7 +161,7 @@ const MonthlySalesDashboard = () => {
             <button
               onClick={() => setViewMode('comparison')}
               style={{
-                background: viewMode === 'comparison' 
+                background: viewMode === 'comparison'
                   ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
                   : 'transparent',
                 color: viewMode === 'comparison' ? 'white' : '#667eea',
@@ -336,9 +336,9 @@ const MonthlySalesDashboard = () => {
             <h3 style={{ fontSize: '1.6rem', fontWeight: '700', margin: '0 0 25px 0', color: '#2c3e50' }}>
               📅 Daily Sales Breakdown - {months[selectedMonth - 1]} {selectedYear}
             </h3>
-            
+
             <div style={{ overflowX: 'auto' }}>
-              <div style={{ 
+              <div style={{
                 display: 'grid',
                 gridTemplateColumns: `repeat(${Math.min(monthlyData.dailySummary.length, 7)}, 1fr)`,
                 gap: '15px',
@@ -348,7 +348,7 @@ const MonthlySalesDashboard = () => {
                 {monthlyData.dailySummary.slice(0, 31).map((day, index) => {
                   const maxRevenue = Math.max(...monthlyData.dailySummary.map(d => d.totalRevenue));
                   const heightPercent = maxRevenue > 0 ? (day.totalRevenue / maxRevenue) * 100 : 0;
-                  
+
                   return (
                     <div
                       key={index}
@@ -445,7 +445,7 @@ const MonthlySalesDashboard = () => {
             <h3 style={{ fontSize: '1.6rem', fontWeight: '700', margin: '0 0 30px 0', color: '#2c3e50', textAlign: 'center' }}>
               📈 Month-over-Month Comparison
             </h3>
-            
+
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
@@ -454,7 +454,7 @@ const MonthlySalesDashboard = () => {
               {(() => {
                 const currentTotals = calculateTotalFromDaily(comparisonData.current.dailySummary);
                 const previousTotals = calculateTotalFromDaily(comparisonData.previous.dailySummary);
-                
+
                 const comparisons = [
                   {
                     metric: 'Total Orders',
@@ -480,11 +480,11 @@ const MonthlySalesDashboard = () => {
                     format: 'currency'
                   }
                 ];
-                
+
                 return comparisons.map((item, index) => {
                   const growth = calculateGrowth(item.current, item.previous);
                   const growthColor = getGrowthColor(growth);
-                  
+
                   return (
                     <div
                       key={index}
@@ -502,7 +502,7 @@ const MonthlySalesDashboard = () => {
                           {item.metric}
                         </h4>
                       </div>
-                      
+
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
                         <div>
                           <div style={{ fontSize: '12px', color: '#666', marginBottom: '5px' }}>
@@ -521,7 +521,7 @@ const MonthlySalesDashboard = () => {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -575,4 +575,5 @@ const MonthlySalesDashboard = () => {
   );
 };
 
-export default MonthlySalesDashboard;
+const MonthlySalesDashboardComponent = MonthlySalesDashboard;
+export default MonthlySalesDashboardComponent;

@@ -123,16 +123,16 @@ const Header = () => {
         maxWidth: '100vw',
         overflowX: 'hidden'
       }}>
-        <div className="container full-width" style={{ 
-          maxWidth: '100%', 
-          margin: '0 auto', 
+        <div className="container full-width" style={{
+          maxWidth: '100%',
+          margin: '0 auto',
           padding: '0 10px',
           boxSizing: 'border-box',
           overflowX: 'hidden'
         }}>
-          <div className="top-bar-content overflow-fix" style={{ 
-            display: 'flex', 
-            justifyContent: window.innerWidth <= 768 ? 'center' : 'space-between', 
+          <div className="top-bar-content overflow-fix" style={{
+            display: 'flex',
+            justifyContent: window.innerWidth <= 768 ? 'center' : 'space-between',
             alignItems: 'center',
             flexWrap: 'wrap',
             gap: window.innerWidth <= 768 ? '8px' : '10px',
@@ -140,17 +140,17 @@ const Header = () => {
             maxWidth: '100%',
             overflowX: 'hidden'
           }}>
-            <div className="contact-info" style={{ 
-              display: 'flex', 
-              gap: window.innerWidth <= 768 ? '12px' : '20px', 
+            <div className="contact-info" style={{
+              display: 'flex',
+              gap: window.innerWidth <= 768 ? '12px' : '20px',
               alignItems: 'center',
               flexWrap: 'wrap',
               justifyContent: window.innerWidth <= 768 ? 'center' : 'flex-start',
               fontSize: window.innerWidth <= 768 ? '11px' : '13px'
             }}>
-              <span className="contact-phone" style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
+              <span className="contact-phone" style={{
+                display: 'flex',
+                alignItems: 'center',
                 gap: '4px',
                 minWidth: 'fit-content',
                 whiteSpace: 'nowrap'
@@ -158,9 +158,9 @@ const Header = () => {
                 <span style={{ fontSize: '14px' }}>📞</span> +91 8838686407
               </span>
               {window.innerWidth > 480 && (
-                <span className="contact-email" style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
+                <span className="contact-email" style={{
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: '4px',
                   whiteSpace: 'nowrap'
                 }}>
@@ -169,14 +169,14 @@ const Header = () => {
               )}
             </div>
             {window.innerWidth > 768 && (
-              <div className="store-hours" style={{ 
-                display: 'flex', 
-                gap: '20px', 
-                alignItems: 'center' 
+              <div className="store-hours" style={{
+                display: 'flex',
+                gap: '20px',
+                alignItems: 'center'
               }}>
-                <span style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
+                <span style={{
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: '6px',
                   background: 'rgba(255,255,255,0.1)',
                   padding: '4px 12px',
@@ -185,9 +185,9 @@ const Header = () => {
                 }}>
                   <span style={{ fontSize: '16px' }}>🚚</span> Free Delivery on orders above ₹2000
                 </span>
-                <span style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
+                <span style={{
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: '6px',
                   whiteSpace: 'nowrap'
                 }}>
@@ -213,15 +213,15 @@ const Header = () => {
         maxWidth: '100vw',
         overflowX: 'hidden'
       }}>
-        <div className="container full-width" style={{ 
-          maxWidth: '100%', 
-          margin: '0 auto', 
+        <div className="container full-width" style={{
+          maxWidth: '100%',
+          margin: '0 auto',
           padding: '0 10px',
           boxSizing: 'border-box'
         }}>
-          <div className="header-content overflow-fix" style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
+          <div className="header-content overflow-fix" style={{
+            display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
             padding: window.innerWidth <= 768 ? '10px 0' : '12px 0',
             flexWrap: 'wrap',
@@ -232,7 +232,7 @@ const Header = () => {
             {/* Logo - Mobile Responsive */}
             <Link to="/" className="logo-section" style={{ textDecoration: 'none', color: '#2c3e50' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: getResponsiveStyle('8px', '10px', '12px') }}>
-                <div style={{ 
+                <div style={{
                   fontSize: getResponsiveStyle('1.4rem', '1.6rem', '1.8rem'),
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   color: 'white',
@@ -248,9 +248,9 @@ const Header = () => {
                   ⚡
                 </div>
                 <div className="brand-text">
-                  <h1 className="brand-title" style={{ 
-                    margin: 0, 
-                    fontSize: getResponsiveStyle('1.2rem', '1.4rem', '1.6rem'), 
+                  <h1 className="brand-title" style={{
+                    margin: 0,
+                    fontSize: getResponsiveStyle('1.2rem', '1.4rem', '1.6rem'),
                     fontWeight: '800',
                     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                     WebkitBackgroundClip: 'text',
@@ -260,9 +260,9 @@ const Header = () => {
                   }}>
                     ELECTROSTORE
                   </h1>
-                  <p style={{ 
-                    margin: 0, 
-                    fontSize: getResponsiveStyle('0.7rem', '0.8rem', '0.85rem'), 
+                  <p style={{
+                    margin: 0,
+                    fontSize: getResponsiveStyle('0.7rem', '0.8rem', '0.85rem'),
                     color: '#666',
                     fontWeight: '500',
                     lineHeight: '1.1',
@@ -277,9 +277,9 @@ const Header = () => {
 
 
             {/* User Actions - Enhanced */}
-            <div className="user-actions" style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+            <div className="user-actions" style={{
+              display: 'flex',
+              alignItems: 'center',
               gap: getResponsiveStyle('4px', '6px', '8px'),
               flexShrink: 0
             }}>
@@ -288,7 +288,6 @@ const Header = () => {
                 className="mobile-nav-toggle"
                 onClick={() => setShowMobileMenu(!showMobileMenu)}
                 style={{
-                  display: 'none',
                   background: 'none',
                   border: 'none',
                   fontSize: getResponsiveStyle('20px', '22px', '24px'),
@@ -310,8 +309,8 @@ const Header = () => {
               </button>
 
               {/* Cart */}
-              <Link to="/cart" className="cart-link" style={{ 
-                color: '#2c3e50', 
+              <Link to="/cart" className="cart-link" style={{
+                color: '#2c3e50',
                 textDecoration: 'none',
                 display: 'flex',
                 flexDirection: 'column',
@@ -325,21 +324,21 @@ const Header = () => {
                 minHeight: '44px',
                 justifyContent: 'center'
               }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-                e.currentTarget.style.color = 'white';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = '#2c3e50';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                  e.currentTarget.style.color = 'white';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = '#2c3e50';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
               >
                 <span style={{ fontSize: getResponsiveStyle('1.2rem', '1.3rem', '1.4rem') }}>🛒</span>
                 {windowWidth > 480 && (
-                  <span style={{ 
-                    fontSize: getResponsiveStyle('9px', '10px', '11px'), 
+                  <span style={{
+                    fontSize: getResponsiveStyle('9px', '10px', '11px'),
                     fontWeight: '600',
                     lineHeight: '1'
                   }}>Cart</span>
@@ -368,8 +367,8 @@ const Header = () => {
               </Link>
 
               {/* Wishlist - Always Visible */}
-              <Link to="/wishlist" className="wishlist-link" style={{ 
-                color: '#2c3e50', 
+              <Link to="/wishlist" className="wishlist-link" style={{
+                color: '#2c3e50',
                 textDecoration: 'none',
                 display: 'flex',
                 flexDirection: 'column',
@@ -383,23 +382,23 @@ const Header = () => {
                 justifyContent: 'center',
                 position: 'relative'
               }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%)';
-                e.currentTarget.style.color = 'white';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 107, 0.3)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = '#2c3e50';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%)';
+                  e.currentTarget.style.color = 'white';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 107, 0.3)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = '#2c3e50';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
               >
                 <span style={{ fontSize: getResponsiveStyle('1.2rem', '1.3rem', '1.4rem') }}>❤️</span>
                 {windowWidth > 480 && (
-                  <span style={{ 
-                    fontSize: getResponsiveStyle('9px', '10px', '11px'), 
+                  <span style={{
+                    fontSize: getResponsiveStyle('9px', '10px', '11px'),
                     fontWeight: '600',
                     lineHeight: '1'
                   }}>Wishlist</span>
@@ -438,7 +437,7 @@ const Header = () => {
                         e.target.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.3)';
                       }}
                     >
-                      <span style={{ 
+                      <span style={{
                         background: 'rgba(255,255,255,0.2)',
                         borderRadius: '50%',
                         width: getResponsiveStyle('24px', '26px', '28px'),
@@ -451,7 +450,7 @@ const Header = () => {
                       }}>👤</span>
                       {windowWidth > 480 && (
                         <>
-                          <span style={{ 
+                          <span style={{
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
@@ -463,7 +462,7 @@ const Header = () => {
                         </>
                       )}
                     </button>
-                    
+
                     {showUserMenu && (
                       <div style={{
                         position: 'absolute',
@@ -500,34 +499,34 @@ const Header = () => {
                             </div>
                           )}
                         </div>
-                        
-                        <Link to="/account" style={{ 
+
+                        <Link to="/account" style={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: '12px',
-                          padding: '16px 20px', 
-                          textDecoration: 'none', 
+                          padding: '16px 20px',
+                          textDecoration: 'none',
                           color: '#2c3e50',
                           borderBottom: '1px solid #f0f0f0',
                           fontSize: '14px',
                           fontWeight: '500',
                           transition: 'all 0.3s ease'
                         }}
-                        onClick={() => setShowUserMenu(false)}
-                        onMouseOver={(e) => e.target.style.background = '#f8f9fa'}
-                        onMouseOut={(e) => e.target.style.background = 'transparent'}
+                          onClick={() => setShowUserMenu(false)}
+                          onMouseOver={(e) => e.target.style.background = '#f8f9fa'}
+                          onMouseOut={(e) => e.target.style.background = 'transparent'}
                         >
                           <span style={{ fontSize: '16px' }}>👤</span> My Account
                         </Link>
 
                         {/* Admin Dashboard Link - Only for Admin */}
                         {isAdmin && (
-                          <Link to="/admin" style={{ 
+                          <Link to="/admin" style={{
                             display: 'flex',
                             alignItems: 'center',
                             gap: '12px',
-                            padding: '16px 20px', 
-                            textDecoration: 'none', 
+                            padding: '16px 20px',
+                            textDecoration: 'none',
                             color: '#667eea',
                             borderBottom: '1px solid #f0f0f0',
                             fontSize: '14px',
@@ -535,39 +534,39 @@ const Header = () => {
                             transition: 'all 0.3s ease',
                             background: 'rgba(102, 126, 234, 0.05)'
                           }}
-                          onClick={() => setShowUserMenu(false)}
-                          onMouseOver={(e) => {
-                            e.target.style.background = 'rgba(102, 126, 234, 0.1)';
-                            e.target.style.color = '#764ba2';
-                          }}
-                          onMouseOut={(e) => {
-                            e.target.style.background = 'rgba(102, 126, 234, 0.05)';
-                            e.target.style.color = '#667eea';
-                          }}
+                            onClick={() => setShowUserMenu(false)}
+                            onMouseOver={(e) => {
+                              e.target.style.background = 'rgba(102, 126, 234, 0.1)';
+                              e.target.style.color = '#764ba2';
+                            }}
+                            onMouseOut={(e) => {
+                              e.target.style.background = 'rgba(102, 126, 234, 0.05)';
+                              e.target.style.color = '#667eea';
+                            }}
                           >
                             <span style={{ fontSize: '16px' }}>🔧</span> Admin Dashboard
                           </Link>
                         )}
-                        
-                        <Link to="/orders" style={{ 
+
+                        <Link to="/orders" style={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: '12px',
-                          padding: '16px 20px', 
-                          textDecoration: 'none', 
+                          padding: '16px 20px',
+                          textDecoration: 'none',
                           color: '#2c3e50',
                           borderBottom: '1px solid #f0f0f0',
                           fontSize: '14px',
                           fontWeight: '500',
                           transition: 'all 0.3s ease'
                         }}
-                        onClick={() => setShowUserMenu(false)}
-                        onMouseOver={(e) => e.target.style.background = '#f8f9fa'}
-                        onMouseOut={(e) => e.target.style.background = 'transparent'}
+                          onClick={() => setShowUserMenu(false)}
+                          onMouseOver={(e) => e.target.style.background = '#f8f9fa'}
+                          onMouseOut={(e) => e.target.style.background = 'transparent'}
                         >
                           <span style={{ fontSize: '16px' }}>📦</span> My Orders
                         </Link>
-                        
+
                         <button
                           onClick={handleLogout}
                           style={{
@@ -593,7 +592,7 @@ const Header = () => {
                       </div>
                     )}
                   </div>
-                  ) : (
+                ) : (
                   <button
                     onClick={handleLogin}
                     style={{
@@ -636,9 +635,9 @@ const Header = () => {
         boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
       }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 20px' }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
             gap: '0',
             padding: '0',
             flexWrap: 'wrap'
@@ -660,9 +659,9 @@ const Header = () => {
               }
               return true;
             }).map((item, index) => (
-              <Link key={index} to={item.path} style={{ 
-                textDecoration: 'none', 
-                color: '#2c3e50', 
+              <Link key={index} to={item.path} style={{
+                textDecoration: 'none',
+                color: '#2c3e50',
                 fontWeight: '600',
                 padding: '16px 20px',
                 borderRadius: '0',
@@ -673,16 +672,16 @@ const Header = () => {
                 alignItems: 'center',
                 gap: '6px'
               }}
-              onMouseOver={(e) => {
-                e.target.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-                e.target.style.color = 'white';
-                e.target.style.transform = 'translateY(-1px)';
-              }}
-              onMouseOut={(e) => {
-                e.target.style.background = 'transparent';
-                e.target.style.color = '#2c3e50';
-                e.target.style.transform = 'translateY(0)';
-              }}
+                onMouseOver={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                  e.target.style.color = 'white';
+                  e.target.style.transform = 'translateY(-1px)';
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.background = 'transparent';
+                  e.target.style.color = '#2c3e50';
+                  e.target.style.transform = 'translateY(0)';
+                }}
               >
                 <span style={{ fontSize: '16px' }}>{item.icon}</span>
                 <span>{item.label.replace(item.icon + ' ', '')}</span>
@@ -743,8 +742,8 @@ const Header = () => {
           </button>
 
           <div style={{ marginBottom: '40px', textAlign: 'center' }}>
-            <h2 style={{ 
-              fontSize: '24px', 
+            <h2 style={{
+              fontSize: '24px',
               fontWeight: 'bold',
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               WebkitBackgroundClip: 'text',
@@ -774,8 +773,8 @@ const Header = () => {
             }
             return true;
           }).map((item, index) => (
-            <Link 
-              key={index} 
+            <Link
+              key={index}
               to={item.path}
               onClick={() => setShowMobileMenu(false)}
               style={{

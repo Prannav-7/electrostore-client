@@ -12,11 +12,10 @@ import './ProfessionalAdmin.css';
 const NewAdminDashboard = () => {
   const { isAdmin } = useAdmin();
   const navigate = useNavigate();
-  const [products, setProducts] = useState([]);
+
   const [loading, setLoading] = useState(true);
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
+  // const [editingProduct, setEditingProduct] = useState(null); // Unused
+
   const [activeTab, setActiveTab] = useState('products');
   const [stats, setStats] = useState({
     totalProducts: 0,
@@ -25,49 +24,11 @@ const NewAdminDashboard = () => {
     outOfStock: 0
   });
 
-  const categories = [
-    'Electrical Goods',
-    'Hardware & Tools',
-    'Wiring & Cables',
-    'Switches & Sockets',
-    'Lighting Solutions',
-    'Fans & Ventilation',
-    'Electrical Motors',
-    'Safety Equipment'
-  ];
 
-  // Redirect if not admin
-  useEffect(() => {
-    if (!isAdmin) {
-      navigate('/');
-      return;
-    }
-    fetchProducts();
-  }, [isAdmin, navigate, fetchProducts]);
 
-  const fetchProducts = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await api.get('/products');
-      if (response.data?.data) {
-        setProducts(response.data.data);
-        calculateStats(response.data.data);
-      } else if (response.data?.products) {
-        setProducts(response.data.products);
-        calculateStats(response.data.products);
-      } else if (Array.isArray(response.data)) {
-        setProducts(response.data);
-        calculateStats(response.data);
-      }
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      alert('Failed to fetch products. Please check if the server is running.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
-  const calculateStats = (productsData) => {
+
+  const calculateStats = useCallback((productsData) => {
     const totalProducts = productsData.length;
     const totalValue = productsData.reduce((sum, product) => sum + (product.price * product.stock), 0);
     const lowStock = productsData.filter(product => product.stock > 0 && product.stock <= 10).length;
@@ -79,59 +40,36 @@ const NewAdminDashboard = () => {
       lowStock,
       outOfStock
     });
-  };
+  }, []);
 
-  const handleDeleteProduct = async (productId, productName) => {
-    const confirmMessage = `Are you sure you want to delete "${productName}"?\\n\\nType "DELETE" to confirm:`;
-    const userInput = window.prompt(confirmMessage);
-
-    if (userInput !== 'DELETE') {
-      if (userInput !== null) {
-        alert('Product deletion cancelled. You must type "DELETE" exactly to confirm.');
+  const fetchProducts = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/products');
+      if (response.data?.data) {
+        calculateStats(response.data.data);
+      } else if (Array.isArray(response.data)) {
+        calculateStats(response.data);
       }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      alert('Failed to fetch products. Please check if the server is running.');
+    } finally {
+      setLoading(false);
+    }
+  }, [calculateStats]);
+
+  // Redirect if not admin
+  useEffect(() => {
+    if (!isAdmin) {
+      navigate('/');
       return;
     }
+    fetchProducts();
+  }, [isAdmin, navigate, fetchProducts]);
 
-    try {
-      const response = await api.delete(`/products/${productId}`);
-      if (response.data?.success) {
-        const updatedProducts = products.filter(product => product._id !== productId);
-        setProducts(updatedProducts);
-        calculateStats(updatedProducts);
-        alert(`✅ Product "${productName}" deleted successfully!`);
-      }
-    } catch (error) {
-      console.error('Error deleting product:', error);
-      alert(`❌ Failed to delete product: ${error.response?.data?.message || error.message}`);
-    }
-  };
+  // handleUpdateProduct, handleDeleteProduct and filteredProducts removed as unused from this view
 
-  const handleUpdateProduct = async (productId, updatedData) => {
-    try {
-      const response = await api.put(`/products/${productId}`, updatedData);
-      if (response.data?.success || response.data?._id) {
-        const updatedProducts = products.map(product =>
-          product._id === productId ? { ...product, ...updatedData } : product
-        );
-        setProducts(updatedProducts);
-        setEditingProduct(null);
-        calculateStats(updatedProducts);
-        alert(`✅ Product updated successfully!`);
-      }
-    } catch (error) {
-      console.error('Error updating product:', error);
-      alert(`❌ Failed to update product: ${error.response?.data?.message || error.message}`);
-    }
-  };
-
-
-
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = filterCategory === '' || product.category === filterCategory;
-    return matchesSearch && matchesCategory;
-  });
 
   if (!isAdmin) {
     return null;

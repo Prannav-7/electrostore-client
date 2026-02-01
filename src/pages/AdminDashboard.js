@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import AdminIndicator from '../components/AdminIndicator';
 import SalesDashboard from '../components/SalesDashboard';
-import AnimatedMonthlySalesDashboard from '../components/AnimatedMonthlySalesDashboard';
+import ProfessionalSalesAnalytics from '../components/ProfessionalSalesAnalytics';
 import CustomerOrders from '../components/CustomerOrders';
 import { useAdmin } from '../hooks/useAdmin';
 import api from '../api';
@@ -13,6 +13,7 @@ const AdminDashboard = () => {
   const { isAdmin } = useAdmin();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -33,7 +34,7 @@ const AdminDashboard = () => {
 
   const categories = [
     'Electrical Goods',
-    'Hardware & Tools', 
+    'Hardware & Tools',
     'Wiring & Cables',
     'Switches & Sockets',
     'Lighting Solutions',
@@ -42,16 +43,21 @@ const AdminDashboard = () => {
     'Safety Equipment'
   ];
 
-  // Redirect if not admin
-  useEffect(() => {
-    if (!isAdmin) {
-      navigate('/');
-      return;
-    }
-    fetchProducts();
-  }, [isAdmin, navigate]);
+  const calculateStats = useCallback((productsData) => {
+    const totalProducts = productsData.length;
+    const totalValue = productsData.reduce((sum, product) => sum + (product.price * product.stock), 0);
+    const lowStock = productsData.filter(product => product.stock > 0 && product.stock <= 10).length;
+    const outOfStock = productsData.filter(product => product.stock === 0).length;
 
-  const fetchProducts = async () => {
+    setStats({
+      totalProducts,
+      totalValue,
+      lowStock,
+      outOfStock
+    });
+  }, []);
+
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.get('/products');
@@ -75,27 +81,22 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [calculateStats]);
 
-  const calculateStats = (productsData) => {
-    const totalProducts = productsData.length;
-    const totalValue = productsData.reduce((sum, product) => sum + (product.price * product.stock), 0);
-    const lowStock = productsData.filter(product => product.stock > 0 && product.stock <= 10).length;
-    const outOfStock = productsData.filter(product => product.stock === 0).length;
-
-    setStats({
-      totalProducts,
-      totalValue,
-      lowStock,
-      outOfStock
-    });
-  };
+  // Redirect if not admin
+  useEffect(() => {
+    if (!isAdmin) {
+      navigate('/');
+      return;
+    }
+    fetchProducts();
+  }, [isAdmin, navigate, fetchProducts]);
 
   const handleDeleteProduct = async (productId, productName) => {
     const confirmMessage = `Are you sure you want to delete "${productName}"?\n\nThis action cannot be undone and will permanently remove:\n• Product information\n• Stock data\n• All related records\n\nType "DELETE" to confirm:`;
-    
+
     const userInput = window.prompt(confirmMessage);
-    
+
     if (userInput !== 'DELETE') {
       if (userInput !== null) { // User didn't cancel, but typed wrong confirmation
         alert('Product deletion cancelled. You must type "DELETE" exactly to confirm.');
@@ -123,12 +124,12 @@ const AdminDashboard = () => {
     try {
       const response = await api.put(`/products/${productId}`, updatedData);
       if (response.data?.success || response.data?._id) {
-        const updatedProducts = products.map(product => 
+        const updatedProducts = products.map(product =>
           product._id === productId ? { ...product, ...updatedData } : product
         );
         setProducts(updatedProducts);
         setEditingProduct(null);
-        
+
         // Show success message with product name
         const productName = updatedData.name || products.find(p => p._id === productId)?.name;
         alert(`✅ Product "${productName}" updated successfully!`);
@@ -145,13 +146,13 @@ const AdminDashboard = () => {
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchTerm.toLowerCase());
+      product.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === '' || product.category === filterCategory;
     return matchesSearch && matchesCategory;
   });
 
   // Fetch daily sales report
-  const fetchSalesData = async (date = selectedDate) => {
+  const fetchSalesData = useCallback(async (date = selectedDate) => {
     try {
       setLoadingSales(true);
       const response = await api.get(`/orders/admin/daily-sales?date=${date}`);
@@ -164,10 +165,10 @@ const AdminDashboard = () => {
     } finally {
       setLoadingSales(false);
     }
-  };
+  }, [selectedDate]);
 
   // Fetch all orders for admin
-  const fetchOrdersData = async (page = 1) => {
+  const fetchOrdersData = useCallback(async (page = 1) => {
     try {
       setLoadingOrders(true);
       const response = await api.get(`/orders/admin/all-orders?page=${page}&limit=20`);
@@ -180,7 +181,7 @@ const AdminDashboard = () => {
     } finally {
       setLoadingOrders(false);
     }
-  };
+  }, []);
 
   // Load sales and orders data when tab changes
   useEffect(() => {
@@ -189,7 +190,7 @@ const AdminDashboard = () => {
     } else if (isAdmin && activeTab === 'orders') {
       fetchOrdersData();
     }
-  }, [activeTab, isAdmin]);
+  }, [activeTab, isAdmin, fetchSalesData, fetchOrdersData]);
 
   // Handle date change for sales report
   const handleDateChange = (newDate) => {
@@ -204,8 +205,8 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
+    <div style={{
+      minHeight: '100vh',
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%)',
       backgroundSize: '400% 400%',
       animation: 'gradientShift 15s ease infinite'
@@ -218,7 +219,7 @@ const AdminDashboard = () => {
         }
       `}</style>
       <Header />
-      
+
       {/* Admin Dashboard Header */}
       <div style={{
         background: 'rgba(255, 255, 255, 0.15)',
@@ -251,10 +252,10 @@ const AdminDashboard = () => {
           borderRadius: '50%',
           animation: 'float 8s ease-in-out infinite reverse'
         }}></div>
-        
+
         <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 20px', position: 'relative', zIndex: 2 }}>
-          <div style={{ 
-            fontSize: '5rem', 
+          <div style={{
+            fontSize: '5rem',
             marginBottom: '20px',
             animation: 'bounce 2s ease-in-out infinite'
           }}>
@@ -294,7 +295,7 @@ const AdminDashboard = () => {
             Jaimaaruthi Electrics and Hardware - Advanced Business Intelligence
           </p>
         </div>
-        
+
         <style jsx>{`
           @keyframes float {
             0%, 100% { transform: translateY(0px) rotate(0deg); }
@@ -338,14 +339,14 @@ const AdminDashboard = () => {
             transform: 'translateY(0)',
             transition: 'all 0.4s ease'
           }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.transform = 'translateY(-10px)';
-            e.currentTarget.style.boxShadow = '0 30px 80px rgba(78, 205, 196, 0.3)';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 20px 60px rgba(78, 205, 196, 0.2)';
-          }}>
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-10px)';
+              e.currentTarget.style.boxShadow = '0 30px 80px rgba(78, 205, 196, 0.3)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 20px 60px rgba(78, 205, 196, 0.2)';
+            }}>
             <div style={{
               position: 'absolute',
               top: '-50%',
@@ -375,14 +376,14 @@ const AdminDashboard = () => {
             transform: 'translateY(0)',
             transition: 'all 0.4s ease'
           }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.transform = 'translateY(-10px)';
-            e.currentTarget.style.boxShadow = '0 30px 80px rgba(102, 126, 234, 0.3)';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 20px 60px rgba(102, 126, 234, 0.2)';
-          }}>
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-10px)';
+              e.currentTarget.style.boxShadow = '0 30px 80px rgba(102, 126, 234, 0.3)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 20px 60px rgba(102, 126, 234, 0.2)';
+            }}>
             <div style={{
               position: 'absolute',
               top: '-50%',
@@ -412,14 +413,14 @@ const AdminDashboard = () => {
             transform: 'translateY(0)',
             transition: 'all 0.4s ease'
           }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.transform = 'translateY(-10px)';
-            e.currentTarget.style.boxShadow = '0 30px 80px rgba(255, 193, 7, 0.3)';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 20px 60px rgba(255, 193, 7, 0.2)';
-          }}>
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-10px)';
+              e.currentTarget.style.boxShadow = '0 30px 80px rgba(255, 193, 7, 0.3)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 20px 60px rgba(255, 193, 7, 0.2)';
+            }}>
             <div style={{
               position: 'absolute',
               top: '-50%',
@@ -449,14 +450,14 @@ const AdminDashboard = () => {
             transform: 'translateY(0)',
             transition: 'all 0.4s ease'
           }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.transform = 'translateY(-10px)';
-            e.currentTarget.style.boxShadow = '0 30px 80px rgba(255, 107, 107, 0.3)';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 20px 60px rgba(255, 107, 107, 0.2)';
-          }}>
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-10px)';
+              e.currentTarget.style.boxShadow = '0 30px 80px rgba(255, 107, 107, 0.3)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 20px 60px rgba(255, 107, 107, 0.2)';
+            }}>
             <div style={{
               position: 'absolute',
               top: '-50%',
@@ -555,11 +556,11 @@ const AdminDashboard = () => {
                     position: 'relative',
                     overflow: 'hidden'
                   }}>
-                    <img 
-                      src="/images/product-management.svg" 
+                    <img
+                      src="/images/product-management.svg"
                       alt="Product Management"
-                      style={{ 
-                        width: '40px', 
+                      style={{
+                        width: '40px',
                         height: '40px',
                         filter: 'brightness(0) invert(1)'
                       }}
@@ -575,213 +576,213 @@ const AdminDashboard = () => {
                   </div>
                 </div>
                 <button
-              onClick={() => navigate('/add-product')}
-              style={{
-                background: 'linear-gradient(135deg, #4caf50 0%, #81c784 100%)',
-                color: 'white',
-                border: 'none',
-                padding: '15px 30px',
+                  onClick={() => navigate('/add-product')}
+                  style={{
+                    background: 'linear-gradient(135deg, #4caf50 0%, #81c784 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '15px 30px',
+                    borderRadius: '25px',
+                    fontSize: '16px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 8px 25px rgba(76, 175, 80, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}
+                  onMouseOver={(e) => {
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 12px 30px rgba(76, 175, 80, 0.4)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 8px 25px rgba(76, 175, 80, 0.3)';
+                  }}
+                >
+                  ➕ Add New Product
+                </button>
+              </div>
+
+              {/* Search and Filter */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                gap: '20px',
+                marginBottom: '20px'
+              }}>
+                <div>
+                  <label style={{ fontSize: '14px', fontWeight: '600', color: '#666', marginBottom: '8px', display: 'block' }}>
+                    Search Products
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Search by name or description..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '15px 20px',
+                      border: '2px solid #f0f0f0',
+                      borderRadius: '15px',
+                      fontSize: '16px',
+                      outline: 'none',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                    onBlur={(e) => e.target.style.borderColor = '#f0f0f0'}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '14px', fontWeight: '600', color: '#666', marginBottom: '8px', display: 'block' }}>
+                    Filter by Category
+                  </label>
+                  <select
+                    value={filterCategory}
+                    onChange={(e) => setFilterCategory(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '15px 20px',
+                      border: '2px solid #f0f0f0',
+                      borderRadius: '15px',
+                      fontSize: '16px',
+                      outline: 'none',
+                      background: 'white',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="">All Categories</option>
+                    {categories.map((category, index) => (
+                      <option key={index} value={category}>{category}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Product Management Banner */}
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(20px)',
+              borderRadius: '25px',
+              padding: '0',
+              marginBottom: '30px',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                width: '100%',
+                height: '200px',
+                background: 'url(/images/product-management-banner.svg) center/cover no-repeat',
                 borderRadius: '25px',
-                fontSize: '16px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                boxShadow: '0 8px 25px rgba(76, 175, 80, 0.3)',
+                position: 'relative',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px'
-              }}
-              onMouseOver={(e) => {
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 12px 30px rgba(76, 175, 80, 0.4)';
-              }}
-              onMouseOut={(e) => {
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 8px 25px rgba(76, 175, 80, 0.3)';
-              }}
-            >
-              ➕ Add New Product
-            </button>
-          </div>
-
-          {/* Search and Filter */}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
-            gap: '20px',
-            marginBottom: '20px'
-          }}>
-            <div>
-              <label style={{ fontSize: '14px', fontWeight: '600', color: '#666', marginBottom: '8px', display: 'block' }}>
-                Search Products
-              </label>
-              <input
-                type="text"
-                placeholder="Search by name or description..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '15px 20px',
-                  border: '2px solid #f0f0f0',
-                  borderRadius: '15px',
-                  fontSize: '16px',
-                  outline: 'none',
-                  transition: 'all 0.3s ease'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#667eea'}
-                onBlur={(e) => e.target.style.borderColor = '#f0f0f0'}
-              />
+                justifyContent: 'center'
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
+                  borderRadius: '25px'
+                }} />
+              </div>
             </div>
 
-            <div>
-              <label style={{ fontSize: '14px', fontWeight: '600', color: '#666', marginBottom: '8px', display: 'block' }}>
-                Filter by Category
-              </label>
-              <select
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '15px 20px',
-                  border: '2px solid #f0f0f0',
-                  borderRadius: '15px',
-                  fontSize: '16px',
-                  outline: 'none',
-                  background: 'white',
-                  cursor: 'pointer'
-                }}
-              >
-                <option value="">All Categories</option>
-                {categories.map((category, index) => (
-                  <option key={index} value={category}>{category}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Product Management Banner */}
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: '25px',
-          padding: '0',
-          marginBottom: '30px',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
-          overflow: 'hidden'
-        }}>
-          <div style={{ 
-            width: '100%', 
-            height: '200px',
-            background: 'url(/images/product-management-banner.svg) center/cover no-repeat',
-            borderRadius: '25px',
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <div style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
-              borderRadius: '25px'
-            }} />
-          </div>
-        </div>
-
-        {/* Products Table */}
-        {loading ? (
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '300px',
-            flexDirection: 'column',
-            gap: '20px'
-          }}>
-            <div style={{
-              width: '60px',
-              height: '60px',
-              border: '6px solid #f3f3f3',
-              borderTop: '6px solid #667eea',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
-            }}></div>
-            <p style={{ color: '#666', fontSize: '18px', fontWeight: '600' }}>Loading products...</p>
-            <style>{`
+            {/* Products Table */}
+            {loading ? (
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                minHeight: '300px',
+                flexDirection: 'column',
+                gap: '20px'
+              }}>
+                <div style={{
+                  width: '60px',
+                  height: '60px',
+                  border: '6px solid #f3f3f3',
+                  borderTop: '6px solid #667eea',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite'
+                }}></div>
+                <p style={{ color: '#666', fontSize: '18px', fontWeight: '600' }}>Loading products...</p>
+                <style>{`
               @keyframes spin {
                 0% { transform: rotate(0deg); }
                 100% { transform: rotate(360deg); }
               }
             `}</style>
-          </div>
-        ) : filteredProducts.length === 0 ? (
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.9)',
-            borderRadius: '25px',
-            padding: '60px 30px',
-            textAlign: 'center',
-            border: '2px dashed #ddd'
-          }}>
-            <div style={{ fontSize: '4rem', marginBottom: '20px', opacity: '0.5' }}>📦</div>
-            <h3 style={{ fontSize: '1.5rem', color: '#666', marginBottom: '10px' }}>No Products Found</h3>
-            <p style={{ color: '#999', fontSize: '16px' }}>
-              {searchTerm || filterCategory ? 'Try adjusting your search or filter criteria.' : 'Start by adding your first product.'}
-            </p>
-          </div>
-        ) : (
-          <ul className="admin-product-list" style={{
-            display: 'block',
-            width: '100%',
-            maxWidth: '100%',
-            minWidth: '100%',
-            padding: '0',
-            margin: '0',
-            listStyle: 'none',
-            gridTemplateColumns: 'none',
-            flexDirection: 'column',
-            flexWrap: 'nowrap',
-            overflow: 'hidden'
-          }}>
-            {filteredProducts.map((product, index) => (
-              <li key={product._id} className="admin-product-item" style={{
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.9)',
+                borderRadius: '25px',
+                padding: '60px 30px',
+                textAlign: 'center',
+                border: '2px dashed #ddd'
+              }}>
+                <div style={{ fontSize: '4rem', marginBottom: '20px', opacity: '0.5' }}>📦</div>
+                <h3 style={{ fontSize: '1.5rem', color: '#666', marginBottom: '10px' }}>No Products Found</h3>
+                <p style={{ color: '#999', fontSize: '16px' }}>
+                  {searchTerm || filterCategory ? 'Try adjusting your search or filter criteria.' : 'Start by adding your first product.'}
+                </p>
+              </div>
+            ) : (
+              <ul className="admin-product-list" style={{
                 display: 'block',
                 width: '100%',
                 maxWidth: '100%',
                 minWidth: '100%',
-                marginBottom: '20px',
-                clear: 'both',
-                float: 'none',
-                position: 'relative',
-                flex: 'none',
-                gridColumn: '1 / -1'
+                padding: '0',
+                margin: '0',
+                listStyle: 'none',
+                gridTemplateColumns: 'none',
+                flexDirection: 'column',
+                flexWrap: 'nowrap',
+                overflow: 'hidden'
               }}>
-                <ProductCard
-                  product={product}
-                  index={index}
-                  onEdit={setEditingProduct}
-                  onDelete={handleDeleteProduct}
-                  onUpdate={handleUpdateProduct}
-                  isEditing={editingProduct?._id === product._id}
-                  categories={categories}
-                />
-              </li>
-            ))}
-          </ul>
-        )}
-        </div>
+                {filteredProducts.map((product, index) => (
+                  <li key={product._id} className="admin-product-item" style={{
+                    display: 'block',
+                    width: '100%',
+                    maxWidth: '100%',
+                    minWidth: '100%',
+                    marginBottom: '20px',
+                    clear: 'both',
+                    float: 'none',
+                    position: 'relative',
+                    flex: 'none',
+                    gridColumn: '1 / -1'
+                  }}>
+                    <ProductCard
+                      product={product}
+                      index={index}
+                      onEdit={setEditingProduct}
+                      onDelete={handleDeleteProduct}
+                      onUpdate={handleUpdateProduct}
+                      isEditing={editingProduct?._id === product._id}
+                      categories={categories}
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         )}
 
         {/* Sales Tab Content */}
         {activeTab === 'sales' && <SalesDashboard />}
 
         {/* Monthly Sales Tab Content */}
-        {activeTab === 'monthly-sales' && <AnimatedMonthlySalesDashboard />}
+        {activeTab === 'monthly-sales' && <ProfessionalSalesAnalytics />}
 
         {/* Orders Tab Content */}
         {activeTab === 'orders' && <CustomerOrders />}
@@ -841,29 +842,29 @@ const ProductCard = ({ product, index, onEdit, onDelete, onUpdate, isEditing, ca
       gap: '30px',
       alignItems: 'center',
       minHeight: '200px',
-  width: '100%',
-  maxWidth: '100%',
-  minWidth: '100%',
-  alignSelf: 'stretch',
+      width: '100%',
+      maxWidth: '100%',
+      minWidth: '100%',
+      alignSelf: 'stretch',
       boxSizing: 'border-box',
       flexShrink: 0,
       flexGrow: 0
     }}
-    onMouseOver={(e) => {
-      if (!isEditing) {
-        e.currentTarget.style.transform = 'translateY(-5px)';
-        e.currentTarget.style.boxShadow = '0 25px 60px rgba(0,0,0,0.15)';
-      }
-    }}
-    onMouseOut={(e) => {
-      if (!isEditing) {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = '0 15px 40px rgba(0,0,0,0.1)';
-      }
-    }}>
-      
+      onMouseOver={(e) => {
+        if (!isEditing) {
+          e.currentTarget.style.transform = 'translateY(-5px)';
+          e.currentTarget.style.boxShadow = '0 25px 60px rgba(0,0,0,0.15)';
+        }
+      }}
+      onMouseOut={(e) => {
+        if (!isEditing) {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 15px 40px rgba(0,0,0,0.1)';
+        }
+      }}>
+
       {/* Product Image Section */}
-      <div style={{ 
+      <div style={{
         position: 'relative',
         width: '250px',
         height: '200px',
@@ -888,7 +889,7 @@ const ProductCard = ({ product, index, onEdit, onDelete, onUpdate, isEditing, ca
             e.target.src = '/images/default-product.svg';
           }}
         />
-        
+
         {/* Status Badge */}
         <div style={{
           position: 'absolute',
@@ -931,7 +932,7 @@ const ProductCard = ({ product, index, onEdit, onDelete, onUpdate, isEditing, ca
             <input
               type="text"
               value={editData.name}
-              onChange={(e) => setEditData({...editData, name: e.target.value})}
+              onChange={(e) => setEditData({ ...editData, name: e.target.value })}
               style={{
                 width: '100%',
                 padding: '12px 16px',
@@ -944,10 +945,10 @@ const ProductCard = ({ product, index, onEdit, onDelete, onUpdate, isEditing, ca
               }}
             />
           ) : (
-            <h3 style={{ 
-              fontSize: '20px', 
-              fontWeight: '700', 
-              color: '#2c3e50', 
+            <h3 style={{
+              fontSize: '20px',
+              fontWeight: '700',
+              color: '#2c3e50',
               margin: '0 0 8px 0',
               lineHeight: '1.3'
             }}>
@@ -961,7 +962,7 @@ const ProductCard = ({ product, index, onEdit, onDelete, onUpdate, isEditing, ca
           {isEditing ? (
             <textarea
               value={editData.description}
-              onChange={(e) => setEditData({...editData, description: e.target.value})}
+              onChange={(e) => setEditData({ ...editData, description: e.target.value })}
               style={{
                 width: '100%',
                 minHeight: '80px',
@@ -976,9 +977,9 @@ const ProductCard = ({ product, index, onEdit, onDelete, onUpdate, isEditing, ca
               }}
             />
           ) : (
-            <p style={{ 
-              fontSize: '14px', 
-              color: '#666', 
+            <p style={{
+              fontSize: '14px',
+              color: '#666',
               lineHeight: '1.6',
               margin: 0,
               display: '-webkit-box',
@@ -992,15 +993,15 @@ const ProductCard = ({ product, index, onEdit, onDelete, onUpdate, isEditing, ca
         </div>
 
         {/* Price, Stock and Actions Row */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
           marginBottom: '15px',
           gap: '20px'
         }}>
           {/* Price */}
-          <div style={{ 
+          <div style={{
             padding: '12px 20px',
             background: 'rgba(76, 175, 80, 0.1)',
             borderRadius: '15px',
@@ -1011,7 +1012,7 @@ const ProductCard = ({ product, index, onEdit, onDelete, onUpdate, isEditing, ca
               <input
                 type="number"
                 value={editData.price}
-                onChange={(e) => setEditData({...editData, price: parseFloat(e.target.value)})}
+                onChange={(e) => setEditData({ ...editData, price: parseFloat(e.target.value) })}
                 style={{
                   width: '120px',
                   padding: '8px 12px',
@@ -1028,9 +1029,9 @@ const ProductCard = ({ product, index, onEdit, onDelete, onUpdate, isEditing, ca
               </div>
             )}
           </div>
-          
+
           {/* Stock */}
-          <div style={{ 
+          <div style={{
             padding: '12px 20px',
             background: 'rgba(102, 126, 234, 0.1)',
             borderRadius: '15px',
@@ -1041,7 +1042,7 @@ const ProductCard = ({ product, index, onEdit, onDelete, onUpdate, isEditing, ca
               <input
                 type="number"
                 value={editData.stock}
-                onChange={(e) => setEditData({...editData, stock: parseInt(e.target.value)})}
+                onChange={(e) => setEditData({ ...editData, stock: parseInt(e.target.value) })}
                 style={{
                   width: '80px',
                   padding: '8px 12px',
@@ -1189,7 +1190,7 @@ const ProductCard = ({ product, index, onEdit, onDelete, onUpdate, isEditing, ca
             <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px', fontWeight: '600' }}>Category</div>
             <select
               value={editData.category}
-              onChange={(e) => setEditData({...editData, category: e.target.value})}
+              onChange={(e) => setEditData({ ...editData, category: e.target.value })}
               style={{
                 width: '100%',
                 padding: '12px 16px',
@@ -1209,8 +1210,8 @@ const ProductCard = ({ product, index, onEdit, onDelete, onUpdate, isEditing, ca
         )}
 
         {/* Last Updated */}
-        <div style={{ 
-          fontSize: '12px', 
+        <div style={{
+          fontSize: '12px',
           color: '#999',
           fontStyle: 'italic',
           textAlign: 'right'

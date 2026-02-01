@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
-import { SERVER_BASE_URL } from '../config/constants';
 import Header from '../components/Header';
 import AdminIndicator from '../components/AdminIndicator';
 import { ValidationUtils } from '../utils/validation';
@@ -28,7 +27,7 @@ const AddProduct = () => {
 
   const categories = [
     'Electrical Goods',
-    'Hardware & Tools', 
+    'Hardware & Tools',
     'Wiring & Cables',
     'Switches & Sockets',
     'Lighting Solutions',
@@ -87,7 +86,7 @@ const AddProduct = () => {
     }
 
     const { isFormValid, errors } = ValidationUtils.validateForm(formData, validationRules);
-    
+
     if (!isFormValid) {
       const errorFields = Object.keys(errors);
       const errorMessage = `Please fix the following errors:\n${errorFields.map(field => `• ${errors[field]}`).join('\n')}`;
@@ -99,7 +98,7 @@ const AddProduct = () => {
     // Additional business logic validation
     const price = parseFloat(formData.price);
     const mrp = formData.mrp ? parseFloat(formData.mrp) : price;
-    
+
     if (mrp < price) {
       alert('MRP cannot be less than selling price');
       setLoading(false);
@@ -108,18 +107,18 @@ const AddProduct = () => {
 
     try {
       let imageUrl = `/images/${formData.category.toLowerCase().replace(/[^a-z0-9]/g, '-')}.svg`;
-      
+
       // If user uploaded an image, upload it first
       if (imageFile) {
         const uploadData = new FormData();
         uploadData.append('image', imageFile);
-        
+
         const uploadResponse = await api.post('/upload', uploadData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
-        
+
         if (uploadResponse.data.success) {
           imageUrl = uploadResponse.data.imageUrl;
         }
@@ -137,7 +136,7 @@ const AddProduct = () => {
       };
 
       const response = await api.post('/products', productData);
-      
+
       if (response.data.success) {
         alert('Product added successfully!');
         navigate('/products');
@@ -155,7 +154,7 @@ const AddProduct = () => {
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
       <Header />
-      
+
       {/* Page Header */}
       <div style={{
         backgroundColor: 'white',
@@ -185,7 +184,7 @@ const AddProduct = () => {
             <h3 style={{ margin: '0 0 20px 0', color: '#333', borderBottom: '2px solid #667eea', paddingBottom: '10px' }}>
               📝 Basic Information
             </h3>
-            
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#333' }}>
@@ -294,7 +293,7 @@ const AddProduct = () => {
             <h3 style={{ margin: '0 0 20px 0', color: '#333', borderBottom: '2px solid #28a745', paddingBottom: '10px' }}>
               💰 Pricing & Inventory
             </h3>
-            
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#333' }}>
@@ -402,7 +401,7 @@ const AddProduct = () => {
             <h3 style={{ margin: '0 0 20px 0', color: '#333', borderBottom: '2px solid #ff9800', paddingBottom: '10px' }}>
               🖼️ Product Image
             </h3>
-            
+
             <div style={{ display: 'grid', gridTemplateColumns: imagePreview ? '1fr 200px' : '1fr', gap: '20px', alignItems: 'start' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#333' }}>
@@ -456,7 +455,7 @@ const AddProduct = () => {
             <h3 style={{ margin: '0 0 20px 0', color: '#333', borderBottom: '2px solid #9c27b0', paddingBottom: '10px' }}>
               ⚙️ Additional Details
             </h3>
-            
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#333' }}>
@@ -608,7 +607,7 @@ const AddProduct = () => {
           100% { transform: rotate(360deg); }
         }
       `}</style>
-      
+
       {/* Admin Mode Indicator */}
       <AdminIndicator showStatus={true} />
     </div>

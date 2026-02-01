@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -32,7 +32,7 @@ ChartJS.register(
 
 const SalesAnalytics = () => {
   console.log('🎯 SalesAnalytics component rendering with real data...');
-  
+
   // Real sales data from API
   const [salesData, setSalesData] = useState({
     dailySales: [],
@@ -50,35 +50,35 @@ const SalesAnalytics = () => {
   useEffect(() => {
     checkAdminPrivileges();
     fetchSalesData();
-  }, [selectedMonth]);
+  }, [fetchSalesData, checkAdminPrivileges]);
 
-  const checkAdminPrivileges = () => {
+  const checkAdminPrivileges = useCallback(() => {
     const token = localStorage.getItem('token');
     const userRole = localStorage.getItem('userRole');
-    
+
     console.log('🔐 Checking admin privileges:', {
       hasToken: !!token,
       userRole: userRole,
       tokenLength: token?.length || 0
     });
-    
+
     if (!token) {
       console.warn('❌ No authentication token found');
     }
-    
+
     if (userRole !== 'admin') {
       console.warn('❌ User role is not admin:', userRole);
     }
-  };
+  }, []);
 
-  const fetchSalesData = async () => {
+  const fetchSalesData = useCallback(async () => {
     try {
       console.log('🔄 Fetching real sales data for month:', selectedMonth);
-      
+
       // Get token from localStorage
       const token = localStorage.getItem('token');
       console.log('📝 Using token:', token ? 'Token found' : 'No token found');
-      
+
       if (!token) {
         console.warn('❌ No authentication token found');
         // Use sample data if no token
@@ -93,7 +93,7 @@ const SalesAnalytics = () => {
         });
         return;
       }
-      
+
       // Fetch sales analytics
       console.log('🌐 Fetching analytics from:', `/api/orders/sales-analytics?month=${selectedMonth}`);
       const analyticsResponse = await fetch(`/api/orders/sales-analytics?month=${selectedMonth}`, {
@@ -103,9 +103,9 @@ const SalesAnalytics = () => {
           'Content-Type': 'application/json'
         }
       });
-      
+
       console.log('📊 Analytics response status:', analyticsResponse.status);
-      
+
       let analyticsData = { data: { dailySales: [], recentOrders: [] } };
       if (analyticsResponse.ok) {
         analyticsData = await analyticsResponse.json();
@@ -113,7 +113,7 @@ const SalesAnalytics = () => {
       } else {
         console.error('❌ Analytics fetch failed:', analyticsResponse.status, analyticsResponse.statusText);
       }
-      
+
       // Fetch monthly comparison (current vs previous month)
       const prevMonth = getPreviousMonth(selectedMonth);
       console.log('📅 Fetching comparison:', `current=${selectedMonth}&previous=${prevMonth}`);
@@ -124,7 +124,7 @@ const SalesAnalytics = () => {
           'Content-Type': 'application/json'
         }
       });
-      
+
       let comparisonData = [];
       if (comparisonResponse.ok) {
         const comparison = await comparisonResponse.json();
@@ -133,7 +133,7 @@ const SalesAnalytics = () => {
       } else {
         console.error('❌ Comparison fetch failed:', comparisonResponse.status);
       }
-      
+
       // Fetch top products
       console.log('🏆 Fetching top products...');
       const productsResponse = await fetch(`/api/orders/top-products?month=${selectedMonth}`, {
@@ -143,7 +143,7 @@ const SalesAnalytics = () => {
           'Content-Type': 'application/json'
         }
       });
-      
+
       let topProductsData = [];
       if (productsResponse.ok) {
         const products = await productsResponse.json();
@@ -152,7 +152,7 @@ const SalesAnalytics = () => {
       } else {
         console.error('❌ Products fetch failed:', productsResponse.status);
       }
-      
+
       // Fetch category breakdown
       console.log('🥧 Fetching category breakdown...');
       const categoryResponse = await fetch(`/api/orders/category-breakdown?month=${selectedMonth}`, {
@@ -162,7 +162,7 @@ const SalesAnalytics = () => {
           'Content-Type': 'application/json'
         }
       });
-      
+
       let categoryData = [];
       if (categoryResponse.ok) {
         const categories = await categoryResponse.json();
@@ -173,9 +173,9 @@ const SalesAnalytics = () => {
       }
 
       // Check if we have any real data, if not use sample data
-      const hasRealData = (analyticsData.data?.dailySales?.length > 0) || 
-                          (comparisonData.length > 0) || 
-                          (topProductsData.length > 0);
+      const hasRealData = (analyticsData.data?.dailySales?.length > 0) ||
+        (comparisonData.length > 0) ||
+        (topProductsData.length > 0);
 
       if (!hasRealData) {
         console.log('📝 No real data found, using sample data');
@@ -210,7 +210,7 @@ const SalesAnalytics = () => {
 
     } catch (error) {
       console.error('❌ Error fetching sales data:', error);
-      
+
       // Fallback to sample data on error
       console.log('🔄 Falling back to sample data');
       setSalesData({
@@ -223,7 +223,7 @@ const SalesAnalytics = () => {
         dataSource: 'sample'
       });
     }
-  };
+  }, [selectedMonth]);
 
   const getPreviousMonth = (monthStr) => {
     const date = new Date(monthStr + '-01');
@@ -376,7 +376,7 @@ const SalesAnalytics = () => {
         data: salesData.topProducts.map(product => product.sales || 0),
         backgroundColor: [
           'rgba(255, 99, 132, 0.8)',
-          'rgba(54, 162, 235, 0.8)', 
+          'rgba(54, 162, 235, 0.8)',
           'rgba(255, 206, 86, 0.8)',
           'rgba(75, 192, 192, 0.8)',
           'rgba(153, 102, 255, 0.8)'
@@ -395,7 +395,7 @@ const SalesAnalytics = () => {
       {
         data: salesData.categoryBreakdown.map(cat => cat.sales),
         backgroundColor: [
-          '#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', 
+          '#ff6384', '#36a2eb', '#ffce56', '#4bc0c0',
           '#9966ff', '#ff9f40', '#c9cbcf'
         ],
         borderColor: '#0d1526',
@@ -409,11 +409,11 @@ const SalesAnalytics = () => {
     return (
       <div className="sales-analytics">
         <div className="analytics-header">
-                  <h1 className="analytics-header">📊 Sales Analytics Dashboard</h1>
-        <div className="data-source-indicator">
-          Data Source: {salesData.dataSource === 'real' ? '✅ Live Database' : 
-                       salesData.dataSource === 'sample' ? '🔄 Sample Data' : '⏳ Loading...'}
-        </div>
+          <h1 className="analytics-header">📊 Sales Analytics Dashboard</h1>
+          <div className="data-source-indicator">
+            Data Source: {salesData.dataSource === 'real' ? '✅ Live Database' :
+              salesData.dataSource === 'sample' ? '🔄 Sample Data' : '⏳ Loading...'}
+          </div>
         </div>
         <div className="loading-container">
           <div className="loading-spinner">Loading real sales data...</div>
@@ -427,7 +427,7 @@ const SalesAnalytics = () => {
       <div className="analytics-header">
         <h2>📊 Real Sales Analytics Dashboard</h2>
         <div className="analytics-controls">
-          <select 
+          <select
             className="month-selector"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
@@ -483,15 +483,15 @@ const SalesAnalytics = () => {
         <div className="chart-card full-width">
           <h3>📈 Daily Sales Performance</h3>
           <div className="chart-container">
-            <Line 
-              data={dailySalesChart} 
+            <Line
+              data={dailySalesChart}
               options={{
                 ...chartOptions,
                 plugins: {
                   ...chartOptions.plugins,
                   title: { ...chartOptions.plugins.title, text: `Daily Revenue for ${selectedMonth}` }
                 }
-              }} 
+              }}
             />
           </div>
         </div>
@@ -500,15 +500,15 @@ const SalesAnalytics = () => {
         <div className="chart-card">
           <h3>📊 Monthly Comparison</h3>
           <div className="chart-container">
-            <Bar 
-              data={monthlyComparisonChart} 
+            <Bar
+              data={monthlyComparisonChart}
               options={{
                 ...chartOptions,
                 plugins: {
                   ...chartOptions.plugins,
                   title: { ...chartOptions.plugins.title, text: 'Current vs Previous Month' }
                 }
-              }} 
+              }}
             />
           </div>
           <div className="comparison-stats">
@@ -528,8 +528,8 @@ const SalesAnalytics = () => {
         <div className="chart-card">
           <h3>🏆 Best Selling Products</h3>
           <div className="chart-container">
-            <Bar 
-              data={topProductsChart} 
+            <Bar
+              data={topProductsChart}
               options={{
                 ...chartOptions,
                 indexAxis: 'y',
@@ -538,7 +538,7 @@ const SalesAnalytics = () => {
                   legend: { display: false },
                   title: { ...chartOptions.plugins.title, text: 'Top Products by Sales Volume' }
                 }
-              }} 
+              }}
             />
           </div>
         </div>
@@ -547,8 +547,8 @@ const SalesAnalytics = () => {
         <div className="chart-card">
           <h3>🥧 Sales by Category</h3>
           <div className="chart-container">
-            <Pie 
-              data={categoryChart} 
+            <Pie
+              data={categoryChart}
               options={{
                 ...chartOptions,
                 plugins: {
@@ -564,7 +564,7 @@ const SalesAnalytics = () => {
                   },
                   title: { ...chartOptions.plugins.title, text: 'Category Performance' }
                 }
-              }} 
+              }}
             />
           </div>
           <div className="category-stats">

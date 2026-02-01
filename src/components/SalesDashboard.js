@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api';
 
 const SalesDashboard = () => {
@@ -6,7 +6,7 @@ const SalesDashboard = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
 
-  const fetchSalesData = async (date = selectedDate) => {
+  const fetchSalesData = useCallback(async (date = selectedDate) => {
     try {
       setLoading(true);
       const response = await api.get(`/orders/admin/daily-sales?date=${date}`);
@@ -19,11 +19,11 @@ const SalesDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedDate]);
 
   useEffect(() => {
     fetchSalesData();
-  }, []);
+  }, [fetchSalesData]);
 
   const handleDateChange = (newDate) => {
     setSelectedDate(newDate);
@@ -254,9 +254,9 @@ const SalesDashboard = () => {
                 marginBottom: '10px'
               }}>
                 <span style={{ fontWeight: '600', color: '#495057', textTransform: 'capitalize' }}>
-                  {method === 'cod' ? '💵 Cash on Delivery' : 
-                   method === 'upi' ? '📱 UPI Payment' :
-                   method === 'razorpay' ? '💳 Online Payment' : `📄 ${method}`}
+                  {method === 'cod' ? '💵 Cash on Delivery' :
+                    method === 'upi' ? '📱 UPI Payment' :
+                      method === 'razorpay' ? '💳 Online Payment' : `📄 ${method}`}
                 </span>
               </div>
               <div style={{ color: '#6c757d', fontSize: '14px' }}>

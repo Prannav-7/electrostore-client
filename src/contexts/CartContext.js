@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../api';
 import { useAuth } from './AuthContext';
 
@@ -25,7 +25,7 @@ export const CartProvider = ({ children }) => {
   };
 
   // Fetch cart items from API
-  const fetchCart = async () => {
+  const fetchCart = useCallback(async () => {
     if (!isAuthenticated) {
       setCartItems([]);
       setCartCount(0);
@@ -36,7 +36,7 @@ export const CartProvider = ({ children }) => {
       setLoading(true);
       const response = await api.get('/cart');
       console.log('CartContext: Fetching cart data', response.data);
-      
+
       // Handle different response formats
       let cartData;
       if (response.data.success && response.data.data) {
@@ -46,12 +46,12 @@ export const CartProvider = ({ children }) => {
       } else {
         cartData = response.data;
       }
-      
+
       const items = cartData.items || [];
       const count = calculateCartCount(items);
-      
+
       console.log('CartContext: Cart updated', { itemsCount: items.length, totalQuantity: count });
-      
+
       setCartItems(items);
       setCartCount(count);
       setError(null);
@@ -63,7 +63,7 @@ export const CartProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
   // Add item to cart
   const addToCart = async (productId, quantity = 1) => {
@@ -71,11 +71,11 @@ export const CartProvider = ({ children }) => {
       if (!isAuthenticated) {
         throw new Error('Please log in to add items to cart');
       }
-      
+
       console.log('CartContext: Adding to cart - Product:', productId, 'Quantity:', quantity);
       const response = await api.post('/cart/add', { productId, quantity });
       console.log('CartContext: Add to cart API response', response.data);
-      
+
       if (response.data.success) {
         await fetchCart(); // Refresh cart data
         return true;
@@ -85,7 +85,7 @@ export const CartProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('CartContext: Error adding to cart:', error);
-      
+
       // Check if it's an authentication error
       if (error.response && error.response.status === 401) {
         console.log('CartContext: Authentication error, user needs to log in again');
@@ -105,7 +105,7 @@ export const CartProvider = ({ children }) => {
       if (quantity < 1) {
         return await removeFromCart(productId);
       }
-      
+
       const response = await api.put(`/cart/update/${productId}`, { quantity });
       if (response.data.success) {
         await fetchCart(); // Refresh cart data
@@ -152,7 +152,7 @@ export const CartProvider = ({ children }) => {
   // Fetch cart when authentication status changes
   useEffect(() => {
     fetchCart();
-  }, [isAuthenticated]);
+  }, [fetchCart]);
 
   const value = {
     cartItems,

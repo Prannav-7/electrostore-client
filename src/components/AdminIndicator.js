@@ -2,7 +2,7 @@ import React from 'react';
 import { useAdmin } from '../hooks/useAdmin';
 
 const AdminIndicator = ({ showStatus = false }) => {
-  const { isAdmin, currentUserEmail } = useAdmin();
+  const { isAdmin } = useAdmin();
 
   if (!isAdmin) return null;
 

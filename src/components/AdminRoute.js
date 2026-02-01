@@ -1,5 +1,4 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const AdminRoute = ({ children }) => {
@@ -64,7 +63,7 @@ const AdminRoute = ({ children }) => {
         }}>
           🔒
         </div>
-        
+
         <div style={{ maxWidth: '500px' }}>
           <h2 style={{
             fontSize: '2.2rem',
@@ -77,7 +76,7 @@ const AdminRoute = ({ children }) => {
           }}>
             Admin Access Required
           </h2>
-          
+
           <p style={{
             fontSize: '1.1rem',
             color: '#666',
@@ -94,14 +93,14 @@ const AdminRoute = ({ children }) => {
             padding: '20px',
             marginBottom: '30px'
           }}>
-            <p style={{ 
+            <p style={{
               margin: 0,
               color: '#d63031',
               fontWeight: '600',
               fontSize: '14px'
             }}>
-              <strong>Access Requirements:</strong><br/>
-              • Must be logged in as admin@gmail.com<br/>
+              <strong>Access Requirements:</strong><br />
+              • Must be logged in as admin@gmail.com<br />
               • Must have valid administrator credentials
             </p>
           </div>
