@@ -19,11 +19,12 @@ const ProductDetails = () => {
   const [activeTab, setActiveTab] = useState('description');
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showReviewModal, setShowReviewModal] = useState(false);
-  const [hasPurchased, setHasPurchased] = useState(false);
   const [userReviews, setUserReviews] = useState([]);
   const [reviewText, setReviewText] = useState('');
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewImages, setReviewImages] = useState([]);
+  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [addingToWishlist, setAddingToWishlist] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -43,20 +44,12 @@ const ProductDetails = () => {
       }
     };
 
-    const checkPurchaseHistory = async () => {
-      if (isAuthenticated) {
-        try {
-          const response = await api.get(`/orders/check-purchase/${id}`);
-          setHasPurchased(response.data.hasPurchased);
-        } catch (error) {
-          console.error("Error checking purchase history:", error);
-        }
-      }
-    };
+
 
     const fetchReviews = async () => {
       try {
-        const response = await api.get(`/products/${id}/reviews`);
+        const response = await api.get(`/reviews/product/${id}`);
+        console.log('Reviews response:', response.data);
         setUserReviews(response.data.reviews || []);
       } catch (error) {
         console.error("Error fetching reviews:", error);
@@ -64,8 +57,8 @@ const ProductDetails = () => {
     };
 
     fetchProduct();
-    checkPurchaseHistory();
     fetchReviews();
+    checkWishlistStatus();
   }, [id, isAuthenticated]);
 
   const handleAddToCart = async () => {
@@ -92,15 +85,15 @@ const ProductDetails = () => {
   };
 
   const handleSubmitReview = async () => {
-    if (!hasPurchased) {
-      alert('You can only review products you have purchased.');
+    if (!isAuthenticated) {
+      alert('Please login to write a review.');
       return;
     }
 
     try {
       const formData = new FormData();
-      formData.append('productId', id);
       formData.append('rating', reviewRating);
+      formData.append('title', `Review for ${product.name}`);
       formData.append('comment', reviewText);
       
       console.log('Submitting review with:');
@@ -108,13 +101,15 @@ const ProductDetails = () => {
       console.log('Rating:', reviewRating);
       console.log('Comment:', reviewText);
       console.log('Images count:', reviewImages.length);
+      console.log('Auth token:', localStorage.getItem('token') ? 'Present' : 'Missing');
+      console.log('User authenticated:', isAuthenticated);
       
       reviewImages.forEach((image, index) => {
         formData.append('images', image);
         console.log(`Image ${index}:`, image.name, image.size, 'bytes');
       });
 
-      const response = await api.post('/products/reviews', formData, {
+      const response = await api.post(`/reviews/product/${id}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -127,12 +122,26 @@ const ProductDetails = () => {
       setReviewImages([]);
       
       // Refresh reviews
-      const reviewsResponse = await api.get(`/products/${id}/reviews`);
+      const reviewsResponse = await api.get(`/reviews/product/${id}`);
       setUserReviews(reviewsResponse.data.reviews || []);
     } catch (error) {
       console.error('Error submitting review:', error);
       console.error('Error response:', error.response?.data);
-      alert('Error submitting review: ' + (error.response?.data?.message || error.message));
+      console.error('Error status:', error.response?.status);
+      console.error('Error headers:', error.response?.headers);
+      
+      let errorMessage = 'Error submitting review: ';
+      if (error.response?.status === 401) {
+        errorMessage += 'Please login again. Your session may have expired.';
+        // Redirect to login
+        navigate('/login');
+      } else if (error.response?.status === 500) {
+        errorMessage += 'Server error. Please try again later.';
+      } else {
+        errorMessage += error.response?.data?.message || error.message;
+      }
+      
+      alert(errorMessage);
     }
   };
 
@@ -147,6 +156,46 @@ const ProductDetails = () => {
 
   const removeReviewImage = (index) => {
     setReviewImages(reviewImages.filter((_, i) => i !== index));
+  };
+
+  // Wishlist functions
+  const checkWishlistStatus = async () => {
+    if (isAuthenticated) {
+      try {
+        const response = await api.get('/wishlist');
+        const wishlistItems = response.data.items || [];
+        setIsInWishlist(wishlistItems.some(item => item.product._id === id));
+      } catch (error) {
+        console.error('Error checking wishlist status:', error);
+      }
+    }
+  };
+
+  const handleWishlistToggle = async () => {
+    if (!isAuthenticated) {
+      alert('Please login to manage wishlist');
+      navigate('/login');
+      return;
+    }
+
+    setAddingToWishlist(true);
+    try {
+      if (isInWishlist) {
+        // Remove from wishlist
+        await api.delete(`/wishlist/remove/${id}`);
+        setIsInWishlist(false);
+        alert('Product removed from wishlist');
+      } else {
+        // Add to wishlist
+        await api.post('/wishlist/add', { productId: id });
+        setIsInWishlist(true);
+        alert('Product added to wishlist');
+      }
+    } catch (error) {
+      console.error('Error updating wishlist:', error);
+      alert('Error updating wishlist: ' + (error.response?.data?.message || error.message));
+    }
+    setAddingToWishlist(false);
   };
 
   const handleBuyNow = async () => {
@@ -322,7 +371,19 @@ const ProductDetails = () => {
                   }}
                 />
                 <div className="flipkart-image-actions">
-                  <button className="flipkart-wishlist-btn">♡</button>
+                  <button 
+                    className={`flipkart-wishlist-btn ${isInWishlist ? 'active' : ''}`}
+                    onClick={handleWishlistToggle}
+                    disabled={addingToWishlist}
+                    title={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                    style={{
+                      color: isInWishlist ? '#ff6b6b' : '#666',
+                      opacity: addingToWishlist ? 0.6 : 1,
+                      cursor: addingToWishlist ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    {isInWishlist ? '❤️' : '🤍'}
+                  </button>
                 </div>
               </div>
             </div>
@@ -357,11 +418,13 @@ const ProductDetails = () => {
             
             <div className="flipkart-rating-section">
               <div className="flipkart-rating-badge">
-                <span className="rating-value">4.2</span>
+                <span className="rating-value">
+                  {product.averageRating ? product.averageRating.toFixed(1) : '0.0'}
+                </span>
                 <div className="rating-stars">★</div>
               </div>
               <span className="flipkart-rating-text">
-                {userReviews.length} Ratings & {userReviews.length} Reviews
+                {product.reviewCount || 0} Ratings & {userReviews.length} Reviews
               </span>
             </div>
 
@@ -395,7 +458,9 @@ const ProductDetails = () => {
                   </button>
                 </div>
                 <div className="stock-status">
-                  <span className="stock-indicator in-stock">In Stock</span>
+                  <span className={`stock-indicator ${product.stock > 0 ? 'in-stock' : 'out-of-stock'}`}>
+                    {product.stock > 0 ? `${product.stock} units in stock` : 'Out of Stock'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -416,8 +481,10 @@ const ProductDetails = () => {
                 <span className="seller-label">Sold by</span>
                 <span className="seller-name">Jaimaruthi Electrical Store</span>
                 <div className="seller-rating">
-                  <span className="seller-stars">★★★★☆</span>
-                  <span>4.1</span>
+                  <span className="seller-stars">
+                    {product.averageRating ? '★'.repeat(Math.round(product.averageRating)) + '☆'.repeat(5 - Math.round(product.averageRating)) : '☆☆☆☆☆'}
+                  </span>
+                  <span>{product.averageRating ? product.averageRating.toFixed(1) : '0.0'}</span>
                 </div>
               </div>
             </div>
@@ -532,12 +599,19 @@ const ProductDetails = () => {
                       <span className="rating-count">{userReviews.length} reviews</span>
                     </div>
                   </div>
-                  {isAuthenticated && hasPurchased && (
+                  {isAuthenticated ? (
                     <button 
                       className="write-review-btn"
                       onClick={() => setShowReviewModal(true)}
                     >
                       Write Review
+                    </button>
+                  ) : (
+                    <button 
+                      className="write-review-btn login-prompt"
+                      onClick={() => navigate('/login')}
+                    >
+                      Login to Write Review
                     </button>
                   )}
                 </div>
@@ -548,13 +622,22 @@ const ProductDetails = () => {
                       <div key={index} className="review-item">
                         <div className="review-header">
                           <div className="reviewer-info">
-                            <span className="reviewer-name">{review.userName}</span>
+                            <div className="reviewer-name-section">
+                              <span className="reviewer-name">
+                                👤 {review.user || review.userName || 'Anonymous User'}
+                              </span>
+                              <span className="review-date">
+                                📅 {new Date(review.date || review.createdAt).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })}
+                              </span>
+                            </div>
                             <div className="review-rating">
                               <StarRating rating={review.rating} readonly />
+                              <span className="rating-text">({review.rating}/5)</span>
                             </div>
-                            <span className="review-date">
-                              {new Date(review.createdAt).toLocaleDateString()}
-                            </span>
                           </div>
                         </div>
                         <div className="review-content">

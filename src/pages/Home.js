@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 import Header from '../components/Header';
+import StarRating from '../components/StarRating';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { getImageURL } from '../config/constants';
@@ -509,7 +510,7 @@ function Home() {
                     <p style={{
                       color: '#7F8C8D',
                       fontSize: '0.9rem',
-                      margin: '0 0 20px 0',
+                      margin: '0 0 15px 0',
                       lineHeight: '1.5',
                       display: '-webkit-box',
                       WebkitLineClamp: 2,
@@ -518,6 +519,17 @@ function Home() {
                     }}>
                       {product.description}
                     </p>
+
+                    {/* Rating Display */}
+                    <div style={{ marginBottom: '15px' }}>
+                      <StarRating 
+                        rating={product.averageRating || 0}
+                        reviewCount={product.reviewCount || 0}
+                        size="medium"
+                        showText={true}
+                        compact={false}
+                      />
+                    </div>
 
                     {/* Price */}
                     <div style={{

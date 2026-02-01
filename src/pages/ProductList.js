@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api';
 import Header from '../components/Header';
+import StarRating from '../components/StarRating';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 
@@ -14,6 +15,7 @@ const ProductList = () => {
   const [category, setCategory] = useState('');
   const [keyword, setKeyword] = useState('');
   const [sortBy, setSortBy] = useState('name');
+  const [availableCategories, setAvailableCategories] = useState([]);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -27,24 +29,6 @@ const ProductList = () => {
     });
   }, [isAuthenticated, authLoading, user]);
 
-  const categories = [
-    'Electrical Goods',
-    'Hardware & Tools', 
-    'Wiring & Cables',
-    'Switches & Sockets',
-    'Lighting Solutions',
-    'Fans & Ventilation',
-    'Electrical Motors',
-    'Safety Equipment',
-    'Building Materials',
-    'Plumbing Supplies',
-    'Paint & Finishes',
-    'Steel & Metal Products',
-    'Pipes & Fittings',
-    'Power Tools',
-    'Hand Tools'
-  ];
-
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -52,7 +36,18 @@ const ProductList = () => {
       console.log('API Response:', response.data);
       
       if (response.data.success) {
-        setProducts(response.data.data);
+        const productData = response.data.data;
+        setProducts(productData);
+        
+        // Extract unique categories from actual products
+        const uniqueCategories = [...new Set(
+          productData
+            .map(product => product.category)
+            .filter(cat => cat && cat.trim() !== '') // Remove empty categories
+        )].sort(); // Sort alphabetically
+        
+        setAvailableCategories(uniqueCategories);
+        console.log('Available categories from products:', uniqueCategories);
       } else {
         setError('Failed to fetch products');
       }
@@ -71,20 +66,63 @@ const ProductList = () => {
   useEffect(() => {
     // Check if category is passed as URL parameter
     const categoryParam = searchParams.get('category');
+    const searchParam = searchParams.get('search') || searchParams.get('q');
+    
     if (categoryParam) {
       setCategory(decodeURIComponent(categoryParam));
     } else {
       setCategory('');
     }
+    
+    // Set search keyword from URL parameter
+    if (searchParam) {
+      setKeyword(decodeURIComponent(searchParam));
+    }
   }, [searchParams]);
 
-  // Filter and sort products
+  // Enhanced search functionality
+  const handleSearchChange = (value) => {
+    setKeyword(value);
+    
+    // Update URL parameters for shareable links
+    const params = new URLSearchParams();
+    if (value.trim()) {
+      params.set('search', encodeURIComponent(value.trim()));
+    }
+    if (category) {
+      params.set('category', encodeURIComponent(category));
+    }
+    
+    const newUrl = params.toString() ? `?${params.toString()}` : '';
+    navigate(`/products${newUrl}`, { replace: true });
+  };
+
+  const handleCategoryChange = (value) => {
+    setCategory(value);
+    
+    // Update URL parameters
+    const params = new URLSearchParams();
+    if (keyword.trim()) {
+      params.set('search', encodeURIComponent(keyword.trim()));
+    }
+    if (value) {
+      params.set('category', encodeURIComponent(value));
+    }
+    
+    const newUrl = params.toString() ? `?${params.toString()}` : '';
+    navigate(`/products${newUrl}`, { replace: true });
+  };
+
+  // Filter and sort products with enhanced search
   const filteredProducts = products
     .filter(product => {
-      const matchesKeyword = keyword === '' || 
-        product.name.toLowerCase().includes(keyword.toLowerCase()) ||
-        product.description.toLowerCase().includes(keyword.toLowerCase()) ||
-        product.brand.toLowerCase().includes(keyword.toLowerCase());
+      const searchKeyword = keyword.toLowerCase().trim();
+      const matchesKeyword = searchKeyword === '' || 
+        product.name.toLowerCase().includes(searchKeyword) ||
+        product.description.toLowerCase().includes(searchKeyword) ||
+        (product.brand && product.brand.toLowerCase().includes(searchKeyword)) ||
+        (product.category && product.category.toLowerCase().includes(searchKeyword)) ||
+        (product.tags && product.tags.some(tag => tag.toLowerCase().includes(searchKeyword)));
       
       const matchesCategory = category === '' || product.category === category;
       
@@ -95,7 +133,7 @@ const ProductList = () => {
         case 'price-low': return a.price - b.price;
         case 'price-high': return b.price - a.price;
         case 'name': return a.name.localeCompare(b.name);
-        case 'brand': return a.brand.localeCompare(b.brand);
+        case 'brand': return (a.brand || '').localeCompare(b.brand || '');
         default: return 0;
       }
     });
@@ -174,9 +212,9 @@ const ProductList = () => {
               </label>
               <input 
                 type="text" 
-                placeholder="Search by name, brand, or description..." 
+                placeholder="Search by name, brand, category or description..." 
                 value={keyword} 
-                onChange={(e) => setKeyword(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 style={{ 
                   width: '100%',
                   padding: '12px',
@@ -192,11 +230,11 @@ const ProductList = () => {
             
             <div>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500', color: '#333' }}>
-                📂 Category
+                📂 Category ({availableCategories.length} available)
               </label>
               <select 
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                onChange={(e) => handleCategoryChange(e.target.value)}
                 style={{ 
                   width: '100%',
                   padding: '12px',
@@ -206,10 +244,15 @@ const ProductList = () => {
                   backgroundColor: 'white'
                 }}
               >
-                <option value=''>All Categories</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
+                <option value=''>All Categories ({products.length})</option>
+                {availableCategories.map(cat => {
+                  const count = products.filter(p => p.category === cat).length;
+                  return (
+                    <option key={cat} value={cat}>
+                      {cat} ({count})
+                    </option>
+                  );
+                })}
               </select>
             </div>
             
@@ -242,6 +285,7 @@ const ProductList = () => {
                   onClick={() => {
                     setKeyword('');
                     setCategory('');
+                    navigate('/products', { replace: true });
                   }}
                   style={{
                     backgroundColor: '#6c757d',
@@ -250,8 +294,11 @@ const ProductList = () => {
                     padding: '12px 20px',
                     borderRadius: '8px',
                     cursor: 'pointer',
-                    fontSize: '14px'
+                    fontSize: '14px',
+                    transition: 'background-color 0.3s ease'
                   }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = '#5a6268'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = '#6c757d'}
                 >
                   🗑️ Clear Filters
                 </button>
@@ -349,6 +396,18 @@ const ProductList = () => {
                   }}>
                     {product.description.substring(0, 120)}...
                   </p>
+                  
+                  {/* Rating Display */}
+                  <div style={{ marginBottom: '12px' }}>
+                    <StarRating 
+                      rating={product.averageRating || 0}
+                      reviewCount={product.reviewCount || 0}
+                      size="small"
+                      showText={true}
+                      compact={true}
+                    />
+                  </div>
+                  
                   <div style={{ 
                     display: 'flex', 
                     justifyContent: 'space-between', 

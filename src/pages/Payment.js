@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { ValidationUtils } from '../utils/validation';
 import Header from '../components/Header';
+import api from '../api';
 
 const Payment = () => {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ const Payment = () => {
 
   const handlePlaceOrder = async () => {
     if (!orderData || !paymentMethod || !deliveryAddress.address) return;
-    
+
     setLoading(true);
     try {
       // Handle Direct UPI Payment
@@ -58,49 +59,44 @@ const Payment = () => {
       }
 
       // Handle other payment methods (COD, UPI, Card)
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      const response = await api.post('/orders', {
+
+
+        items: orderData.items,
+
+        customerDetails: {
+          firstName: deliveryAddress.name.split(' ')[0] || '',
+          lastName: deliveryAddress.name.split(' ').slice(1).join(' ') || undefined,
+          email: user?.email || '',
+          phone: deliveryAddress.mobile,
+          address: deliveryAddress.address,
+          city: deliveryAddress.city,
+          state: deliveryAddress.state,
+          pincode: deliveryAddress.pincode,
+          landmark: deliveryAddress.landmark || ''
         },
-        body: JSON.stringify({
-          items: orderData.items,
-      
-          customerDetails: {
-            firstName: deliveryAddress.name.split(' ')[0] || '',
-            lastName: deliveryAddress.name.split(' ').slice(1).join(' ') || '',
-            email: user?.email || '',
-            phone: deliveryAddress.mobile,
-            address: deliveryAddress.address,
-            city: deliveryAddress.city,
-            state: deliveryAddress.state,
-            pincode: deliveryAddress.pincode,
-            landmark: deliveryAddress.landmark || ''
-          },
-          orderSummary: orderData.orderSummary || {},
-          paymentDetails: {
-            method: paymentMethod,
-            status: paymentMethod === 'cod' ? 'pending' : 'completed'
-          }
-        })
+        orderSummary: orderData.orderSummary || {},
+        paymentDetails: {
+          method: paymentMethod,
+          status: paymentMethod === 'cod' ? 'pending' : 'completed'
+        }
       });
 
-      if (response.ok) {
-        const order = await response.json();
-        navigate('/order-success', { 
-          state: { 
+      if (response.data) {
+        const order = response.data;
+        navigate('/order-success', {
+          state: {
             message: 'Order placed successfully!',
             orderId: order._id,
             orderNumber: order.orderNumber || order._id,
-            paymentMethod: paymentMethod === 'cod' ? 'Cash on Delivery' : 
-                          paymentMethod === 'upi' ? 'UPI Payment' : 'Credit/Debit Card',
+            paymentMethod: paymentMethod === 'cod' ? 'Cash on Delivery' :
+              paymentMethod === 'upi' ? 'UPI Payment' : 'Credit/Debit Card',
             amount: orderTotal,
             orderData: {
               items: orderData.items,
               customerDetails: {
                 firstName: deliveryAddress.name.split(' ')[0] || '',
-                lastName: deliveryAddress.name.split(' ').slice(1).join(' ') || '',
+                lastName: deliveryAddress.name.split(' ').slice(1).join(' ') || undefined,
                 email: user?.email || '',
                 phone: deliveryAddress.mobile,
                 address: deliveryAddress.address,
@@ -133,20 +129,20 @@ const Payment = () => {
   const handleRazorpayPayment = async () => {
     try {
       console.log('🔄 Initiating Razorpay payment process...');
-      
+
       // Validate order total
       if (!orderTotal || orderTotal <= 0) {
         alert('Invalid order amount. Please try again.');
         setLoading(false);
         return;
       }
-      
+
       const amountInPaise = Math.round(orderTotal * 100);
       console.log('💰 Amount in paise:', amountInPaise);
-      
+
       // Load and initialize Razorpay Checkout
       await loadRazorpayScript();
-      
+
       // Show confirmation before opening Razorpay
       const confirmPayment = window.confirm(
         `💳 Razorpay Secure Payment\n\n` +
@@ -160,14 +156,14 @@ const Payment = () => {
         `� 100% Secure Payment by Razorpay\n\n` +
         `Click OK to proceed to payment`
       );
-      
+
       if (confirmPayment) {
         await initiateRazorpayCheckout(amountInPaise);
       } else {
         // Show alternative payment options including direct UPI
         showAlternativePaymentOptions();
       }
-      
+
     } catch (error) {
       console.error('❌ Error in Razorpay payment:', error);
       alert(`Payment initialization failed: ${error.message}`);
@@ -203,7 +199,7 @@ const Payment = () => {
   const initiateRazorpayCheckout = async (amountInPaise) => {
     try {
       console.log('🚀 Creating Razorpay order on server...');
-      
+
       // Step 1: Create order on server first
       const orderResponse = await fetch('/api/payment/create-order', {
         method: 'POST',
@@ -257,7 +253,7 @@ const Payment = () => {
           color: '#2874f0'
         },
         modal: {
-          ondismiss: function() {
+          ondismiss: function () {
             console.log('⚠️ Payment window closed by user');
             setLoading(false);
             const retry = window.confirm(
@@ -273,16 +269,16 @@ const Payment = () => {
           max_count: 3
         }
       };
-      
+
       const rzp = new window.Razorpay(options);
-      
+
       // Handle payment failure
       rzp.on('payment.failed', function (response) {
         console.error('❌ Payment failed:', response.error);
         setLoading(false);
-        
+
         const errorMessage = response.error.description || response.error.reason || 'Payment could not be processed';
-        
+
         alert(
           `Payment Failed\n\n` +
           `Error: ${errorMessage}\n\n` +
@@ -293,22 +289,22 @@ const Payment = () => {
           `• Bank server down\n\n` +
           `Please try again or use a different payment method.`
         );
-        
+
         // Offer retry option
         const retry = window.confirm('Would you like to try payment again?');
         if (retry) {
           setTimeout(() => handleRazorpayPayment(), 1000);
         }
       });
-      
+
       // Open Razorpay checkout
       console.log('🎯 Opening Razorpay checkout with server order...');
       rzp.open();
-      
+
     } catch (error) {
       console.error('❌ Error creating order or opening checkout:', error);
       setLoading(false);
-      
+
       alert(
         `Payment Setup Failed\n\n` +
         `Error: ${error.message}\n\n` +
@@ -321,13 +317,13 @@ const Payment = () => {
   const handleRazorpaySuccess = async (paymentResponse) => {
     try {
       console.log('🎉 Processing successful payment...', paymentResponse);
-      
+
       // Prepare order data for verification and database storage
       const orderDataForVerification = {
         items: orderData.items,
         customerDetails: {
           firstName: deliveryAddress.name.split(' ')[0] || '',
-          lastName: deliveryAddress.name.split(' ').slice(1).join(' ') || '',
+          lastName: deliveryAddress.name.split(' ').slice(1).join(' ') || undefined,
           email: user?.email || '',
           phone: deliveryAddress.mobile,
           address: deliveryAddress.address,
@@ -344,7 +340,7 @@ const Payment = () => {
           itemCount: orderData.items?.length || 0
         }
       };
-      
+
       // Verify payment with server
       console.log('🔍 Verifying payment with server...');
       const verifyResponse = await fetch('/api/payment/verify', {
@@ -391,11 +387,11 @@ const Payment = () => {
           orderData: orderDataForVerification
         }
       });
-      
+
     } catch (error) {
       console.error('❌ Error processing successful payment:', error);
       setLoading(false);
-      
+
       alert(
         `Payment Processing Error\n\n` +
         `Your payment was successful, but there was an issue processing your order.\n\n` +
@@ -420,7 +416,7 @@ const Payment = () => {
       `   • No advance payment required\n\n` +
       `Choose your option:`
     );
-    
+
     if (choice) {
       showDirectUPIPayment();
     } else {
@@ -434,11 +430,11 @@ const Payment = () => {
     const merchantName = 'Prannav P - Jaimaaruthi Electrical Store';
     const bankName = 'Karur Vysya Bank 1054';
     const amount = orderTotal.toFixed(2);
-    
+
     // Create UPI payment URL for QR code and deep linking
     const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(merchantName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(`Order Payment - ₹${amount}`)}`;
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiUrl)}`;
-    
+
     // Create a custom dialog with UPI details
     const upiDialog = document.createElement('div');
     upiDialog.style.cssText = `
@@ -454,7 +450,7 @@ const Payment = () => {
       z-index: 10000;
       font-family: Arial, sans-serif;
     `;
-    
+
     upiDialog.innerHTML = `
       <div style="
         background: white;
@@ -654,15 +650,15 @@ const Payment = () => {
         </p>
       </div>
     `;
-    
+
     document.body.appendChild(upiDialog);
-    
+
     // Add global functions for the dialog
     window.handleUPIPaymentDone = () => {
       document.body.removeChild(upiDialog);
       handleDirectUPIConfirmation();
     };
-    
+
     window.tryUPIApp = () => {
       // Try to open UPI app on mobile
       const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -672,7 +668,7 @@ const Payment = () => {
         alert('UPI apps work best on mobile devices. Please scan the QR code with your phone.');
       }
     };
-    
+
     window.closeUPIDialog = () => {
       document.body.removeChild(upiDialog);
       setLoading(false);
@@ -687,12 +683,12 @@ const Payment = () => {
   const handleDirectUPIConfirmation = async () => {
     try {
       console.log('🎉 Processing UPI payment confirmation...');
-      
+
       const orderDataForUPI = {
         items: orderData.items,
         customerDetails: {
           firstName: deliveryAddress.name.split(' ')[0] || '',
-          lastName: deliveryAddress.name.split(' ').slice(1).join(' ') || '',
+          lastName: deliveryAddress.name.split(' ').slice(1).join(' ') || undefined,
           email: user?.email || '',
           phone: deliveryAddress.mobile,
           address: deliveryAddress.address,
@@ -709,7 +705,7 @@ const Payment = () => {
           itemCount: orderData.items?.length || 0
         }
       };
-      
+
       // Call UPI verification endpoint
       const response = await fetch('/api/payment/verify-upi', {
         method: 'POST',
@@ -758,7 +754,7 @@ const Payment = () => {
           UPI ID: prannav2511@okhdfcbank`
         }
       });
-      
+
     } catch (error) {
       console.error('❌ Error processing UPI payment:', error);
       alert(`UPI Payment Error: ${error.message}\nPlease contact support if you completed the payment.`);
@@ -784,7 +780,7 @@ const Payment = () => {
       `delivered to your address.\n\n` +
       `Click OK to confirm COD order`
     );
-    
+
     if (confirmCOD) {
       handleCODPayment();
     } else {
@@ -796,12 +792,12 @@ const Payment = () => {
   const handleCODPayment = async () => {
     try {
       console.log('💰 Processing COD order...');
-      
+
       const orderDataForCOD = {
         items: orderData.items,
         customerDetails: {
           firstName: deliveryAddress.name.split(' ')[0] || '',
-          lastName: deliveryAddress.name.split(' ').slice(1).join(' ') || '',
+          lastName: deliveryAddress.name.split(' ').slice(1).join(' ') || undefined,
           email: user?.email || '',
           phone: deliveryAddress.mobile,
           address: deliveryAddress.address,
@@ -818,7 +814,7 @@ const Payment = () => {
           itemCount: orderData.items?.length || 0
         }
       };
-      
+
       const response = await fetch('/api/payment/verify-cod', {
         method: 'POST',
         headers: {
@@ -859,7 +855,7 @@ const Payment = () => {
           orderData: orderDataForCOD
         }
       });
-      
+
     } catch (error) {
       console.error('❌ Error placing COD order:', error);
       alert(`COD Order Error: ${error.message}`);
@@ -873,7 +869,7 @@ const Payment = () => {
   const handlePaymentSuccess = async (orderData) => {
     try {
       console.log('✅ Processing successful payment...');
-      
+
       // Create order with completed payment status
       const orderResponse = await fetch('/api/orders', {
         method: 'POST',
@@ -899,7 +895,7 @@ const Payment = () => {
 
       if (orderResponse.ok) {
         const order = await orderResponse.json();
-        
+
         navigate('/order-success', {
           state: {
             message: 'Payment completed successfully!',
@@ -933,14 +929,14 @@ const Payment = () => {
     };
 
     const { isFormValid, errors } = ValidationUtils.validateForm(deliveryAddress, validationRules);
-    
+
     if (!isFormValid) {
       const errorFields = Object.keys(errors);
       const errorMessage = `Please fix the following errors:\n${errorFields.map(field => `• ${errors[field]}`).join('\n')}`;
       alert(errorMessage);
       return;
     }
-    
+
     setCurrentStep(2);
   };
 
@@ -951,7 +947,7 @@ const Payment = () => {
   return (
     <div style={{ backgroundColor: '#f1f3f6', minHeight: '100vh' }}>
       <Header />
-      
+
       {/* Progress Steps */}
       <div style={{
         backgroundColor: '#fff',
@@ -988,7 +984,7 @@ const Payment = () => {
             </div>
             <span style={{ fontWeight: '500', fontSize: '14px' }}>DELIVERY ADDRESS</span>
           </div>
-          
+
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -1011,7 +1007,7 @@ const Payment = () => {
             </div>
             <span style={{ fontWeight: '500', fontSize: '14px' }}>PAYMENT OPTIONS</span>
           </div>
-          
+
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -1085,11 +1081,11 @@ const Payment = () => {
                   DELIVERY ADDRESS
                 </h2>
               </div>
-              
+
               <div style={{ padding: '24px' }}>
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: window.innerWidth <= 768 ? '1fr' : '1fr 1fr', 
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: window.innerWidth <= 768 ? '1fr' : '1fr 1fr',
                   gap: '16px',
                   marginBottom: '16px'
                 }}>
@@ -1097,7 +1093,7 @@ const Payment = () => {
                     type="text"
                     placeholder="Name*"
                     value={deliveryAddress.name}
-                    onChange={(e) => setDeliveryAddress({...deliveryAddress, name: e.target.value})}
+                    onChange={(e) => setDeliveryAddress({ ...deliveryAddress, name: e.target.value })}
                     style={{
                       padding: '12px 16px',
                       border: '1px solid #e0e0e0',
@@ -1110,7 +1106,7 @@ const Payment = () => {
                     type="text"
                     placeholder="Mobile No*"
                     value={deliveryAddress.mobile}
-                    onChange={(e) => setDeliveryAddress({...deliveryAddress, mobile: e.target.value})}
+                    onChange={(e) => setDeliveryAddress({ ...deliveryAddress, mobile: e.target.value })}
                     style={{
                       padding: '12px 16px',
                       border: '1px solid #e0e0e0',
@@ -1120,10 +1116,10 @@ const Payment = () => {
                     }}
                   />
                 </div>
-                
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: window.innerWidth <= 768 ? '1fr' : '1fr 2fr', 
+
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: window.innerWidth <= 768 ? '1fr' : '1fr 2fr',
                   gap: '16px',
                   marginBottom: '16px'
                 }}>
@@ -1131,7 +1127,7 @@ const Payment = () => {
                     type="text"
                     placeholder="Pincode*"
                     value={deliveryAddress.pincode}
-                    onChange={(e) => setDeliveryAddress({...deliveryAddress, pincode: e.target.value})}
+                    onChange={(e) => setDeliveryAddress({ ...deliveryAddress, pincode: e.target.value })}
                     style={{
                       padding: '12px 16px',
                       border: '1px solid #e0e0e0',
@@ -1144,7 +1140,7 @@ const Payment = () => {
                     type="text"
                     placeholder="Locality*"
                     value={deliveryAddress.locality}
-                    onChange={(e) => setDeliveryAddress({...deliveryAddress, locality: e.target.value})}
+                    onChange={(e) => setDeliveryAddress({ ...deliveryAddress, locality: e.target.value })}
                     style={{
                       padding: '12px 16px',
                       border: '1px solid #e0e0e0',
@@ -1154,12 +1150,12 @@ const Payment = () => {
                     }}
                   />
                 </div>
-                
+
                 <textarea
                   placeholder="Address (Area and Street)*"
                   rows="3"
                   value={deliveryAddress.address}
-                  onChange={(e) => setDeliveryAddress({...deliveryAddress, address: e.target.value})}
+                  onChange={(e) => setDeliveryAddress({ ...deliveryAddress, address: e.target.value })}
                   style={{
                     width: '100%',
                     padding: '12px 16px',
@@ -1172,10 +1168,10 @@ const Payment = () => {
                     boxSizing: 'border-box'
                   }}
                 />
-                
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: window.innerWidth <= 768 ? '1fr' : '1fr 1fr', 
+
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: window.innerWidth <= 768 ? '1fr' : '1fr 1fr',
                   gap: '16px',
                   marginBottom: '16px'
                 }}>
@@ -1183,7 +1179,7 @@ const Payment = () => {
                     type="text"
                     placeholder="City/District/Town*"
                     value={deliveryAddress.city}
-                    onChange={(e) => setDeliveryAddress({...deliveryAddress, city: e.target.value})}
+                    onChange={(e) => setDeliveryAddress({ ...deliveryAddress, city: e.target.value })}
                     style={{
                       padding: '12px 16px',
                       border: '1px solid #e0e0e0',
@@ -1196,7 +1192,7 @@ const Payment = () => {
                     type="text"
                     placeholder="State*"
                     value={deliveryAddress.state}
-                    onChange={(e) => setDeliveryAddress({...deliveryAddress, state: e.target.value})}
+                    onChange={(e) => setDeliveryAddress({ ...deliveryAddress, state: e.target.value })}
                     style={{
                       padding: '12px 16px',
                       border: '1px solid #e0e0e0',
@@ -1206,7 +1202,7 @@ const Payment = () => {
                     }}
                   />
                 </div>
-                
+
                 <button
                   onClick={handleAddressSubmit}
                   style={{
@@ -1265,7 +1261,7 @@ const Payment = () => {
                   PAYMENT OPTIONS
                 </h2>
               </div>
-              
+
               <div style={{ padding: '24px' }}>
                 <div style={{ marginBottom: '20px' }}>
                   {/* Direct UPI Payment Option - Primary */}
@@ -1291,21 +1287,21 @@ const Payment = () => {
                       style={{ accentColor: '#28a745', transform: 'scale(1.2)' }}
                     />
                     <div style={{ flex: 1 }}>
-                      <div style={{ 
-                        fontWeight: 'bold', 
-                        fontSize: '16px', 
-                        display: 'flex', 
-                        alignItems: 'center', 
+                      <div style={{
+                        fontWeight: 'bold',
+                        fontSize: '16px',
+                        display: 'flex',
+                        alignItems: 'center',
                         gap: '10px',
                         marginBottom: '5px'
                       }}>
                         � Direct Bank Payment
-                        <span style={{ 
-                          background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)', 
-                          color: 'white', 
-                          padding: '3px 10px', 
-                          borderRadius: '12px', 
-                          fontSize: '11px', 
+                        <span style={{
+                          background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                          color: 'white',
+                          padding: '3px 10px',
+                          borderRadius: '12px',
+                          fontSize: '11px',
                           fontWeight: 'bold',
                           animation: 'pulse 2s infinite'
                         }}>
@@ -1362,13 +1358,13 @@ const Payment = () => {
                     <div>
                       <div style={{ fontWeight: '500', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         💳 Online Payment Gateway
-                        <span style={{ 
-                          background: '#6c757d', 
-                          color: 'white', 
-                          padding: '2px 8px', 
-                          borderRadius: '10px', 
-                          fontSize: '10px', 
-                          fontWeight: 'bold' 
+                        <span style={{
+                          background: '#6c757d',
+                          color: 'white',
+                          padding: '2px 8px',
+                          borderRadius: '10px',
+                          fontSize: '10px',
+                          fontWeight: 'bold'
                         }}>
                           VIA GATEWAY
                         </span>
@@ -1444,7 +1440,7 @@ const Payment = () => {
                   ORDER SUMMARY
                 </h2>
               </div>
-              
+
               <div style={{ padding: '24px' }}>
                 <div style={{ marginBottom: '20px' }}>
                   <h3 style={{ fontSize: '16px', marginBottom: '12px' }}>Delivery Address:</h3>
@@ -1455,10 +1451,10 @@ const Payment = () => {
                     fontSize: '14px',
                     lineHeight: '1.5'
                   }}>
-                    <strong>{deliveryAddress.name}</strong><br/>
-                    {deliveryAddress.address}<br/>
-                    {deliveryAddress.locality}, {deliveryAddress.city}<br/>
-                    {deliveryAddress.state} - {deliveryAddress.pincode}<br/>
+                    <strong>{deliveryAddress.name}</strong><br />
+                    {deliveryAddress.address}<br />
+                    {deliveryAddress.locality}, {deliveryAddress.city}<br />
+                    {deliveryAddress.state} - {deliveryAddress.pincode}<br />
                     <strong>Phone:</strong> {deliveryAddress.mobile}
                   </div>
                 </div>
@@ -1514,7 +1510,7 @@ const Payment = () => {
               PRICE DETAILS
             </h3>
           </div>
-          
+
           <div style={{ padding: '16px 24px' }}>
             <div style={{
               display: 'flex',
@@ -1525,7 +1521,7 @@ const Payment = () => {
               <span>Price ({orderData?.items?.length || 0} items)</span>
               <span>₹{orderTotal?.toLocaleString()}</span>
             </div>
-            
+
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -1535,7 +1531,7 @@ const Payment = () => {
               <span>Delivery Charges</span>
               <span style={{ color: '#388e3c' }}>FREE</span>
             </div>
-            
+
             <div style={{
               borderTop: '1px dashed #e0e0e0',
               paddingTop: '12px',
@@ -1547,7 +1543,7 @@ const Payment = () => {
               <span>Total Amount</span>
               <span>₹{orderTotal?.toLocaleString()}</span>
             </div>
-            
+
             <div style={{
               color: '#388e3c',
               fontSize: '14px',

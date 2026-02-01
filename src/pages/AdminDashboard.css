@@ -1,0 +1,151 @@
+/* ABSOLUTE FORCE: Single product per row - Nuclear option to override ALL external CSS */
+
+/* Target any possible parent containers that might be causing grid layout */
+div[style*="display: grid"],
+div[style*="display:grid"],
+div[class*="grid"],
+div[class*="row"],
+div[class*="col"],
+.container,
+.row,
+.grid-container {
+  display: block !important;
+  grid-template-columns: none !important;
+  grid-template-rows: none !important;
+  flex-direction: column !important;
+  flex-wrap: nowrap !important;
+  width: 100% !important;
+}
+
+/* Force our product list to be absolutely single column */
+.admin-product-list,
+.admin-product-list * {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+  flex: none !important;
+  grid-column: 1 / -1 !important;
+  grid-row: auto !important;
+}
+
+.admin-product-item {
+  display: block !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  margin-bottom: 20px !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding: 0 !important;
+  float: none !important;
+  clear: both !important;
+  position: relative !important;
+  left: 0 !important;
+  right: 0 !important;
+  flex: none !important;
+  grid-column: 1 / -1 !important;
+}
+
+.admin-product-card {
+  display: flex !important;
+  flex-direction: row !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  margin: 0 !important;
+  padding: 25px !important;
+  gap: 30px !important;
+  align-items: center !important;
+}
+
+/* Nuclear option: Override any global grid/flex on the entire admin section */
+div:has(.admin-product-list),
+div:has(.admin-product-card) {
+  display: block !important;
+  grid-template-columns: none !important;
+  flex-direction: column !important;
+  width: 100% !important;
+}
+
+/* Fallback: if browser doesn't support :has(), use descendant selector */
+.admin-products-container,
+.admin-products-container > *,
+.admin-products-container div {
+  display: block !important;
+  width: 100% !important;
+  grid-template-columns: none !important;
+  flex-direction: column !important;
+}
+
+/* Override any Bootstrap or CSS framework grid classes */
+.container-fluid .row,
+.container .row,
+.row > .col,
+.row > .col-*,
+.row > [class*="col-"] {
+  display: block !important;
+  width: 100% !important;
+  flex: none !important;
+}
+
+/* Images inside cards should not break layout */
+.admin-product-card img {
+  display: block !important;
+  max-width: 100% !important;
+  height: auto !important;
+  object-fit: cover !important;
+}
+
+/* ULTIMATE OVERRIDE: Target the specific admin dashboard page structure */
+body * {
+  box-sizing: border-box !important;
+}
+
+/* Force any container in admin dashboard to single column */
+[style*="background: linear-gradient"] .admin-product-list,
+[style*="minHeight: '100vh'"] .admin-product-list,
+div[style*="background"] ul.admin-product-list {
+  display: block !important;
+  width: 100% !important;
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+[style*="background: linear-gradient"] .admin-product-item,
+[style*="minHeight: '100vh'"] .admin-product-item,
+div[style*="background"] li.admin-product-item {
+  display: block !important;
+  width: 100% !important;
+  margin-bottom: 20px !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Force admin product cards to be full width in any context */
+.admin-product-card,
+div.admin-product-card,
+li .admin-product-card {
+  display: flex !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  flex-direction: row !important;
+}
+
+/* Override any potential grid container around products */
+.admin-product-list:before,
+.admin-product-list:after {
+  content: "" !important;
+  display: block !important;
+  clear: both !important;
+  width: 100% !important;
+}

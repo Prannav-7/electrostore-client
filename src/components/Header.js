@@ -52,7 +52,6 @@ const Header = () => {
           .brand-text h1 { font-size: 1.2rem !important; }
           .brand-text p { font-size: 0.75rem !important; }
           .header-content { flex-wrap: wrap !important; }
-          .search-bar-container { order: 3; width: 100%; margin-top: 10px; }
         }
         
         @media (min-width: 481px) and (max-width: 768px) {
@@ -275,73 +274,7 @@ const Header = () => {
               </div>
             </Link>
 
-            {/* Search Bar - Responsive */}
-            <div className="search-bar-container responsive-container" style={{ 
-              flex: window.innerWidth <= 768 ? '0 0 auto' : '1', 
-              maxWidth: window.innerWidth <= 768 ? 'none' : '500px', 
-              margin: window.innerWidth <= 768 ? '0' : '0 20px',
-              position: 'relative',
-              display: window.innerWidth <= 480 ? 'none' : 'block',
-              width: window.innerWidth <= 768 ? '100%' : 'auto',
-              order: window.innerWidth <= 768 ? '3' : 'initial'
-            }}>
-              <div className="search-input-wrapper" style={{
-                position: 'relative',
-                background: '#f8f9fa',
-                borderRadius: window.innerWidth <= 768 ? '25px' : '50px',
-                overflow: 'hidden',
-                border: '2px solid transparent',
-                transition: 'all 0.3s ease'
-              }}>
-                <input
-                  type="text"
-                  placeholder={window.innerWidth <= 768 ? "Search products..." : "Search for electrical products, switches, lights..."}
-                  className="responsive-input"
-                  style={{
-                    width: '100%',
-                    padding: window.innerWidth <= 768 ? '10px 50px 10px 16px' : '14px 60px 14px 24px',
-                    border: 'none',
-                    background: 'transparent',
-                    fontSize: window.innerWidth <= 768 ? '13px' : '14px',
-                    outline: 'none',
-                    fontWeight: '500'
-                  }}
-                  onFocus={(e) => {
-                    e.target.parentElement.style.borderColor = '#667eea';
-                    e.target.parentElement.style.background = 'white';
-                    e.target.parentElement.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.parentElement.style.borderColor = 'transparent';
-                    e.target.parentElement.style.background = '#f8f9fa';
-                    e.target.parentElement.style.boxShadow = 'none';
-                  }}
-                />
-                <button className="search-btn" style={{
-                  position: 'absolute',
-                  right: window.innerWidth <= 768 ? '4px' : '6px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: window.innerWidth <= 768 ? '32px' : '40px',
-                  height: window.innerWidth <= 768 ? '32px' : '40px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: window.innerWidth <= 768 ? '14px' : '16px',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseOver={(e) => e.target.style.transform = 'translateY(-50%) scale(1.05)'}
-                onMouseOut={(e) => e.target.style.transform = 'translateY(-50%) scale(1)'}
-                >
-                  🔍
-                </button>
-              </div>
-            </div>
+
 
             {/* User Actions - Enhanced */}
             <div className="user-actions" style={{ 
@@ -434,43 +367,44 @@ const Header = () => {
                 )}
               </Link>
 
-              {/* Wishlist */}
-              {windowWidth > 380 && (
-                <Link to="/wishlist" className="wishlist-link" style={{ 
-                  color: '#2c3e50', 
-                  textDecoration: 'none',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: getResponsiveStyle('2px', '3px', '4px'),
-                  padding: getResponsiveStyle('8px 10px', '10px 12px', '12px 16px'),
-                  borderRadius: getResponsiveStyle('12px', '14px', '16px'),
-                  transition: 'all 0.3s ease',
-                  minWidth: '44px',
-                  minHeight: '44px',
-                  justifyContent: 'center'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%)';
-                  e.currentTarget.style.color = 'white';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#2c3e50';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-                >
-                  <span style={{ fontSize: getResponsiveStyle('1.2rem', '1.3rem', '1.4rem') }}>❤️</span>
-                  {windowWidth > 480 && (
-                    <span style={{ 
-                      fontSize: getResponsiveStyle('9px', '10px', '11px'), 
-                      fontWeight: '600',
-                      lineHeight: '1'
-                    }}>Wishlist</span>
-                  )}
-                </Link>
-              )}
+              {/* Wishlist - Always Visible */}
+              <Link to="/wishlist" className="wishlist-link" style={{ 
+                color: '#2c3e50', 
+                textDecoration: 'none',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: getResponsiveStyle('2px', '3px', '4px'),
+                padding: getResponsiveStyle('8px 10px', '10px 12px', '12px 16px'),
+                borderRadius: getResponsiveStyle('12px', '14px', '16px'),
+                transition: 'all 0.3s ease',
+                minWidth: '44px',
+                minHeight: '44px',
+                justifyContent: 'center',
+                position: 'relative'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%)';
+                e.currentTarget.style.color = 'white';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 107, 0.3)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.color = '#2c3e50';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+              >
+                <span style={{ fontSize: getResponsiveStyle('1.2rem', '1.3rem', '1.4rem') }}>❤️</span>
+                {windowWidth > 480 && (
+                  <span style={{ 
+                    fontSize: getResponsiveStyle('9px', '10px', '11px'), 
+                    fontWeight: '600',
+                    lineHeight: '1'
+                  }}>Wishlist</span>
+                )}
+              </Link>
 
               {/* User Account - Enhanced */}
               <div style={{ position: 'relative', marginLeft: getResponsiveStyle('4px', '6px', '8px') }}>

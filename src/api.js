@@ -14,9 +14,9 @@ const getBaseURL = () => {
 
 const api = axios.create({
   baseURL: getBaseURL(),
-  timeout: 30000, // 30 second timeout
-  retry: 5, // Increased retry attempts for better reliability
-  retryDelay: 2000, // Increased base retry delay for database connection issues
+  timeout: 5000, // 5 second timeout for faster fallback
+  retry: 2, // Reduced retry attempts for faster fallback
+  retryDelay: 1000, // 1 second retry delay for faster response
 });
 
 // Add request interceptor to include auth token

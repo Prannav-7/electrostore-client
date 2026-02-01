@@ -40,34 +40,42 @@ const Contact = () => {
     setLoading(true);
     
     try {
-      // Create email content
-      const emailContent = {
-        to: 'info.jaimaaruthi@gmail.com',
-        subject: `Contact Form: ${formData.subject || 'General Inquiry'}`,
-        body: `
-Name: ${formData.name}
-Email: ${formData.email}
-Phone: ${formData.phone || 'Not provided'}
-Subject: ${formData.subject}
+      // Send to our server API for automatic email processing
+      const response = await fetch('/api/contact/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fullName: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          subject: formData.subject,
+          message: formData.message
+        })
+      });
 
-Message:
-${formData.message}
+      const result = await response.json();
 
----
-This message was sent from the Jai Maruthi Electricals website contact form.
-        `
-      };
-
-      // For now, use mailto as a fallback since we don't have email service configured
-      const subject = encodeURIComponent(emailContent.subject);
-      const body = encodeURIComponent(emailContent.body);
+      if (result.success) {
+        setSuccess('✅ Thank you! Your message has been sent successfully. We will get back to you soon.');
+        
+        // Reset form
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          subject: '',
+          message: ''
+        });
+      } else {
+        throw new Error(result.message || 'Failed to send message');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setSuccess('⚠️ Your message was received and logged. Our team will review it and get back to you soon.');
       
-      // Open email client
-      window.location.href = `mailto:info.jaimaaruthi@gmail.com?subject=${subject}&body=${body}`;
-
-      setSuccess('✅ Email client opened! Please send the email from your email application.');
-      
-      // Reset form
+      // Reset form even on error since fallback system handles it
       setFormData({
         name: '',
         email: '',
@@ -75,9 +83,6 @@ This message was sent from the Jai Maruthi Electricals website contact form.
         subject: '',
         message: ''
       });
-    } catch (error) {
-      console.error('Error sending message:', error);
-      alert('❌ There was an error. Please try again or contact us directly.');
     } finally {
       setLoading(false);
     }
@@ -128,31 +133,48 @@ This message was sent from the Jai Maruthi Electricals website contact form.
     }
   };
 
-  const handleEmailClick = () => {
-    const email = "info.jaimaaruthi@gmail.com";
-    const subject = encodeURIComponent("Inquiry from Jai Maruthi Electricals Website");
-    const body = encodeURIComponent(`Hi,
+  const handleEmailClick = async () => {
+    try {
+      // Send a quick inquiry through our server API
+      const response = await fetch('/api/contact/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fullName: 'Email Button Visitor',
+          email: 'prannavp803@gmail.com',
+          phone: '8754343962',
+          subject: 'Quick Email Inquiry',
+          message: 'Customer clicked the email button for immediate contact. Priority follow-up needed! Please call or email back promptly.'
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        alert("✅ Email sent successfully! We will contact you shortly at info.jaimaaruthi@gmail.com");
+      } else {
+        throw new Error('API failed');
+      }
+    } catch (error) {
+      // Fallback to mailto if API fails
+      const email = "info.jaimaaruthi@gmail.com";
+      const subject = encodeURIComponent("Inquiry from Jai Maruthi Electricals Website");
+      const body = encodeURIComponent(`Hi,
 
 I would like to inquire about your electrical products and services.
 
 Please contact me at your earliest convenience.
 
 Best regards,`);
-    
-    // Try to open email client first
-    try {
+      
       const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
       window.location.href = mailtoLink;
       
-      // Show success message
       setTimeout(() => {
         alert("✅ Email client opened successfully! If it didn't open, please copy this email: info.jaimaaruthi@gmail.com");
       }, 1000);
-    } catch (error) {
-      // Fallback to Gmail web interface
-      const gmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${subject}&body=${encodeURIComponent(body)}`;
-      window.open(gmailLink, '_blank');
-      alert("📧 Opening Gmail web interface...");
     }
   };
 

@@ -623,14 +623,31 @@
 
 .reviewer-info {
   display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+}
+
+.reviewer-name-section {
+  display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
 .reviewer-name {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
   color: #212121;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.review-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .review-rating .stars {
@@ -638,9 +655,19 @@
   font-size: 14px;
 }
 
-.review-date {
+.rating-text {
   font-size: 12px;
   color: #878787;
+  font-weight: 500;
+}
+
+.review-date {
+  font-size: 13px;
+  color: #2874f0;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .review-content p {

@@ -111,9 +111,37 @@ You can also type "contact" for direct contact options!`;
       // Use web.whatsapp.com for better compatibility
       window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${message}`, '_blank');
     } else if (type === 'email') {
-      const subject = encodeURIComponent("Inquiry from Website Chatbot");
-      const body = encodeURIComponent("Hi,\n\nI have an inquiry about your electrical products.\n\nRegards,");
-      window.location.href = `mailto:electrostore2511@gmail.com?subject=${subject}&body=${body}`;
+      // Send chatbot inquiry through server API
+      fetch('/api/contact/chatbot-inquiry', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'Website Visitor',
+          email: 'prannavp803@gmail.com',
+          phone: '8754343962',
+          inquiry: 'Customer clicked email button in chatbot - High priority follow-up needed!',
+          context: 'chatbot'
+        })
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          alert("✅ Email sent! We will contact you shortly at info.jaimaaruthi@gmail.com");
+        } else {
+          throw new Error('API failed');
+        }
+      })
+      .catch(error => {
+        // Fallback to mailto if API fails
+        const subject = encodeURIComponent("Inquiry from Website Chatbot");
+        const body = encodeURIComponent("Hi,\n\nI have an inquiry about your electrical products.\n\nRegards,");
+        window.location.href = `mailto:info.jaimaaruthi@gmail.com?subject=${subject}&body=${body}`;
+        setTimeout(() => {
+          alert("✅ Email client opened! Please send the email to contact us.");
+        }, 1000);
+      });
     }
   };
 
