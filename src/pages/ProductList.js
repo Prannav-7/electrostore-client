@@ -5,7 +5,7 @@ import api from '../api';
 import Header from '../components/Header';
 import StarRating from '../components/StarRating';
 import { useAuth } from '../contexts/AuthContext';
-import { useCart } from '../contexts/CartContext';
+// import { useCart } from '../contexts/CartContext';
 
 const ProductList = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -34,18 +34,18 @@ const ProductList = () => {
       setLoading(true);
       const response = await api.get('/products');
       console.log('API Response:', response.data);
-      
+
       if (response.data.success) {
         const productData = response.data.data;
         setProducts(productData);
-        
+
         // Extract unique categories from actual products
         const uniqueCategories = [...new Set(
           productData
             .map(product => product.category)
             .filter(cat => cat && cat.trim() !== '') // Remove empty categories
         )].sort(); // Sort alphabetically
-        
+
         setAvailableCategories(uniqueCategories);
         console.log('Available categories from products:', uniqueCategories);
       } else {
@@ -67,13 +67,13 @@ const ProductList = () => {
     // Check if category is passed as URL parameter
     const categoryParam = searchParams.get('category');
     const searchParam = searchParams.get('search') || searchParams.get('q');
-    
+
     if (categoryParam) {
       setCategory(decodeURIComponent(categoryParam));
     } else {
       setCategory('');
     }
-    
+
     // Set search keyword from URL parameter
     if (searchParam) {
       setKeyword(decodeURIComponent(searchParam));
@@ -83,7 +83,7 @@ const ProductList = () => {
   // Enhanced search functionality
   const handleSearchChange = (value) => {
     setKeyword(value);
-    
+
     // Update URL parameters for shareable links
     const params = new URLSearchParams();
     if (value.trim()) {
@@ -92,14 +92,14 @@ const ProductList = () => {
     if (category) {
       params.set('category', encodeURIComponent(category));
     }
-    
+
     const newUrl = params.toString() ? `?${params.toString()}` : '';
     navigate(`/products${newUrl}`, { replace: true });
   };
 
   const handleCategoryChange = (value) => {
     setCategory(value);
-    
+
     // Update URL parameters
     const params = new URLSearchParams();
     if (keyword.trim()) {
@@ -108,7 +108,7 @@ const ProductList = () => {
     if (value) {
       params.set('category', encodeURIComponent(value));
     }
-    
+
     const newUrl = params.toString() ? `?${params.toString()}` : '';
     navigate(`/products${newUrl}`, { replace: true });
   };
@@ -117,15 +117,15 @@ const ProductList = () => {
   const filteredProducts = products
     .filter(product => {
       const searchKeyword = keyword.toLowerCase().trim();
-      const matchesKeyword = searchKeyword === '' || 
+      const matchesKeyword = searchKeyword === '' ||
         product.name.toLowerCase().includes(searchKeyword) ||
         product.description.toLowerCase().includes(searchKeyword) ||
         (product.brand && product.brand.toLowerCase().includes(searchKeyword)) ||
         (product.category && product.category.toLowerCase().includes(searchKeyword)) ||
         (product.tags && product.tags.some(tag => tag.toLowerCase().includes(searchKeyword)));
-      
+
       const matchesCategory = category === '' || product.category === category;
-      
+
       return matchesKeyword && matchesCategory;
     })
     .sort((a, b) => {
@@ -141,7 +141,7 @@ const ProductList = () => {
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '50px' }}>
-        <div style={{ 
+        <div style={{
           display: 'inline-block',
           width: '50px',
           height: '50px',
@@ -157,8 +157,8 @@ const ProductList = () => {
 
   if (error) {
     return (
-      <div style={{ 
-        textAlign: 'center', 
+      <div style={{
+        textAlign: 'center',
         padding: '50px',
         backgroundColor: '#f8d7da',
         margin: '20px',
@@ -174,7 +174,7 @@ const ProductList = () => {
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
       <Header />
-      
+
       {/* Page Header */}
       <div style={{
         backgroundColor: 'white',
@@ -193,16 +193,16 @@ const ProductList = () => {
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
         {/* Search and Filter Controls */}
-        <div style={{ 
+        <div style={{
           backgroundColor: 'white',
           padding: '20px',
           borderRadius: '12px',
           marginBottom: '30px',
           boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
         }}>
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
             gap: '15px',
             alignItems: 'end'
           }}>
@@ -210,12 +210,12 @@ const ProductList = () => {
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500', color: '#333' }}>
                 🔍 Search Products
               </label>
-              <input 
-                type="text" 
-                placeholder="Search by name, brand, category or description..." 
-                value={keyword} 
+              <input
+                type="text"
+                placeholder="Search by name, brand, category or description..."
+                value={keyword}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                style={{ 
+                style={{
                   width: '100%',
                   padding: '12px',
                   border: '2px solid #e9ecef',
@@ -227,15 +227,15 @@ const ProductList = () => {
                 onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
               />
             </div>
-            
+
             <div>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500', color: '#333' }}>
                 📂 Category ({availableCategories.length} available)
               </label>
-              <select 
+              <select
                 value={category}
                 onChange={(e) => handleCategoryChange(e.target.value)}
-                style={{ 
+                style={{
                   width: '100%',
                   padding: '12px',
                   border: '2px solid #e9ecef',
@@ -255,15 +255,15 @@ const ProductList = () => {
                 })}
               </select>
             </div>
-            
+
             <div>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500', color: '#333' }}>
                 🔄 Sort By
               </label>
-              <select 
+              <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                style={{ 
+                style={{
                   width: '100%',
                   padding: '12px',
                   border: '2px solid #e9ecef',
@@ -278,7 +278,7 @@ const ProductList = () => {
                 <option value='price-high'>Price (High to Low)</option>
               </select>
             </div>
-            
+
             {(keyword || category) && (
               <div>
                 <button
@@ -309,9 +309,9 @@ const ProductList = () => {
 
         {/* Products Grid */}
         {filteredProducts.length > 0 ? (
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
             gap: '25px',
             marginBottom: '40px'
           }}>
@@ -325,15 +325,15 @@ const ProductList = () => {
                 border: '1px solid #e9ecef',
                 cursor: 'pointer'
               }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-5px)';
-                e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
-              }}
-              onClick={() => navigate(`/products/${product._id}`)}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-5px)';
+                  e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+                }}
+                onClick={() => navigate(`/products/${product._id}`)}
               >
                 {/* Product Image/Icon */}
                 <div style={{
@@ -377,29 +377,29 @@ const ProductList = () => {
                     {!['Electrical Goods', 'Switches & Sockets', 'Lighting Solutions', 'Fans & Ventilation', 'Wiring & Cables', 'Hardware & Tools', 'Power Tools', 'Electrical Motors'].includes(product.category) && '📦'}
                   </div>
                 </div>
-                
+
                 {/* Product Info */}
                 <div style={{ marginBottom: '15px' }}>
-                  <h4 style={{ 
-                    margin: '0 0 8px 0', 
-                    fontSize: '1.1rem', 
+                  <h4 style={{
+                    margin: '0 0 8px 0',
+                    fontSize: '1.1rem',
                     color: '#333',
                     lineHeight: '1.4'
                   }}>
                     {product.name}
                   </h4>
-                  <p style={{ 
-                    color: '#6c757d', 
-                    fontSize: '0.9rem', 
+                  <p style={{
+                    color: '#6c757d',
+                    fontSize: '0.9rem',
                     margin: '0 0 10px 0',
                     lineHeight: '1.4'
                   }}>
                     {product.description.substring(0, 120)}...
                   </p>
-                  
+
                   {/* Rating Display */}
                   <div style={{ marginBottom: '12px' }}>
-                    <StarRating 
+                    <StarRating
                       rating={product.averageRating || 0}
                       reviewCount={product.reviewCount || 0}
                       size="small"
@@ -407,14 +407,14 @@ const ProductList = () => {
                       compact={true}
                     />
                   </div>
-                  
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
+
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
                     marginBottom: '10px'
                   }}>
-                    <span style={{ 
+                    <span style={{
                       fontSize: '0.85rem',
                       color: '#fff',
                       backgroundColor: '#667eea',
@@ -423,7 +423,7 @@ const ProductList = () => {
                     }}>
                       {product.category}
                     </span>
-                    <span style={{ 
+                    <span style={{
                       fontSize: '0.9rem',
                       color: '#666',
                       fontWeight: '500'
@@ -434,24 +434,24 @@ const ProductList = () => {
                 </div>
 
                 {/* Price and Stock */}
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
                   alignItems: 'center',
                   marginBottom: '15px'
                 }}>
                   <div>
-                    <span style={{ 
-                      fontSize: '1.4rem', 
-                      fontWeight: 'bold', 
+                    <span style={{
+                      fontSize: '1.4rem',
+                      fontWeight: 'bold',
                       color: '#28a745'
                     }}>
                       ₹{product.price}
                     </span>
                   </div>
-                  <span style={{ 
-                    padding: '6px 12px', 
-                    borderRadius: '20px', 
+                  <span style={{
+                    padding: '6px 12px',
+                    borderRadius: '20px',
                     backgroundColor: product.stock > 0 ? '#d4edda' : '#f8d7da',
                     color: product.stock > 0 ? '#155724' : '#721c24',
                     fontSize: '0.8rem',
@@ -463,7 +463,7 @@ const ProductList = () => {
 
                 {/* Action Buttons */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
-                  <Link 
+                  <Link
                     to={`/products/${product._id}`}
                     style={{
                       backgroundColor: '#667eea',
@@ -493,8 +493,8 @@ const ProductList = () => {
             ))}
           </div>
         ) : (
-          <div style={{ 
-            textAlign: 'center', 
+          <div style={{
+            textAlign: 'center',
             padding: '60px 20px',
             backgroundColor: 'white',
             borderRadius: '12px',
@@ -503,8 +503,8 @@ const ProductList = () => {
             <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🔍</div>
             <h3 style={{ color: '#666', marginBottom: '15px' }}>No products found</h3>
             <p style={{ color: '#999', marginBottom: '20px' }}>
-              {keyword || category 
-                ? 'Try adjusting your search criteria' 
+              {keyword || category
+                ? 'Try adjusting your search criteria'
                 : 'No products available at the moment'}
             </p>
             {(keyword || category) && (

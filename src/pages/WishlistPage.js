@@ -8,7 +8,7 @@ import { useCart } from '../contexts/CartContext';
 const WishlistPage = () => {
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { addToCart: addToCartContext } = useCart();
   const navigate = useNavigate();
 
@@ -49,7 +49,7 @@ const WishlistPage = () => {
   const addToCart = async (productId) => {
     try {
       const success = await addToCartContext(productId, 1);
-      
+
       if (success) {
         alert('Product added to cart successfully!');
       } else {
@@ -65,7 +65,7 @@ const WishlistPage = () => {
     if (window.confirm('Are you sure you want to clear your entire wishlist?')) {
       try {
         // Remove all items individually since there might not be a clear all endpoint
-        const promises = wishlist.map(product => 
+        const promises = wishlist.map(product =>
           api.delete(`/wishlist/remove/${product._id}`)
         );
         await Promise.all(promises);
@@ -107,7 +107,7 @@ const WishlistPage = () => {
   return (
     <div style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
       <Header />
-      
+
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
         {/* Wishlist Header */}
         <div style={{
@@ -119,9 +119,9 @@ const WishlistPage = () => {
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h1 style={{ 
-                margin: 0, 
-                fontSize: '2.5rem', 
+              <h1 style={{
+                margin: 0,
+                fontSize: '2.5rem',
                 color: '#333',
                 display: 'flex',
                 alignItems: 'center',
@@ -166,8 +166,8 @@ const WishlistPage = () => {
             <p style={{ color: '#666', marginBottom: '30px', fontSize: '16px' }}>
               Start adding products you love to your wishlist!
             </p>
-            <Link 
-              to="/products" 
+            <Link
+              to="/products"
               style={{
                 backgroundColor: '#667eea',
                 color: 'white',
@@ -196,7 +196,7 @@ const WishlistPage = () => {
               borderRadius: '12px',
               boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
             }}>
-              <Link 
+              <Link
                 to="/products"
                 style={{
                   backgroundColor: 'transparent',
@@ -214,7 +214,7 @@ const WishlistPage = () => {
               >
                 ← Continue Shopping
               </Link>
-              <Link 
+              <Link
                 to="/cart"
                 style={{
                   backgroundColor: '#667eea',
@@ -248,14 +248,14 @@ const WishlistPage = () => {
                   overflow: 'hidden',
                   transition: 'transform 0.2s ease, box-shadow 0.2s ease'
                 }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-5px)';
-                  e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
-                }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-5px)';
+                    e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+                  }}
                 >
                   {/* Product Image */}
                   <div style={{
@@ -311,7 +311,7 @@ const WishlistPage = () => {
                     }}>
                       {product.name}
                     </h3>
-                    
+
                     <div style={{ marginBottom: '15px' }}>
                       <span style={{
                         color: '#666',

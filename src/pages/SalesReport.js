@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -36,9 +36,8 @@ const SalesReport = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [salesData, setSalesData] = useState(null);
   const [filteredData, setFilteredData] = useState(null);
-  
+
   // Filter states
   const [dateRange, setDateRange] = useState({
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days ago
@@ -54,7 +53,7 @@ const SalesReport = () => {
       navigate('/admin-login');
       return;
     }
-    
+
     if (!user?.isAdmin) {
       alert('Access denied. Admin privileges required.');
       navigate('/');
@@ -63,11 +62,11 @@ const SalesReport = () => {
   }, [isAuthenticated, user, navigate]);
 
   // Fetch sales data
-  const fetchSalesData = async () => {
+  const fetchSalesData = useCallback(async () => {
     try {
       setLoading(true);
       console.log('🔍 Fetching sales report data...');
-      
+
       const params = new URLSearchParams({
         startDate: dateRange.startDate,
         endDate: dateRange.endDate,
@@ -77,10 +76,9 @@ const SalesReport = () => {
       });
 
       const response = await api.get(`/orders/admin/sales-report?${params}`);
-      
+
       if (response.data?.success) {
         console.log('✅ Sales data fetched:', response.data.data);
-        setSalesData(response.data.data);
         setFilteredData(response.data.data);
       } else {
         throw new Error('Failed to fetch sales data');
@@ -91,21 +89,21 @@ const SalesReport = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateRange, selectedPaymentMethod, selectedStatus, selectedCategory]);
 
   // Initial data fetch
   useEffect(() => {
     if (user?.isAdmin) {
       fetchSalesData();
     }
-  }, [user]);
+  }, [user, fetchSalesData]);
 
   // Apply filters when they change
   useEffect(() => {
     if (dateRange.startDate && dateRange.endDate) {
       fetchSalesData();
     }
-  }, [dateRange, selectedPaymentMethod, selectedStatus, selectedCategory]);
+  }, [dateRange, selectedPaymentMethod, selectedStatus, selectedCategory, fetchSalesData]);
 
   // Chart data preparation
   const chartData = useMemo(() => {
@@ -143,10 +141,10 @@ const SalesReport = () => {
     // Payment Method Distribution (Pie Chart)
     const paymentMethods = filteredData.paymentMethodBreakdown || {};
     const paymentMethodData = {
-      labels: Object.keys(paymentMethods).map(method => 
-        method === 'cod' ? 'Cash on Delivery' : 
-        method === 'upi' ? 'UPI Payment' :
-        method === 'razorpay' ? 'Online Payment' : method
+      labels: Object.keys(paymentMethods).map(method =>
+        method === 'cod' ? 'Cash on Delivery' :
+          method === 'upi' ? 'UPI Payment' :
+            method === 'razorpay' ? 'Online Payment' : method
       ),
       datasets: [
         {
@@ -175,7 +173,7 @@ const SalesReport = () => {
     // Top Products (Bar Chart)
     const topProducts = filteredData.topProducts || [];
     const topProductsData = {
-      labels: topProducts.slice(0, 10).map(product => 
+      labels: topProducts.slice(0, 10).map(product =>
         product.name.length > 20 ? product.name.substring(0, 20) + '...' : product.name
       ),
       datasets: [
@@ -200,7 +198,7 @@ const SalesReport = () => {
     // Order Status Distribution (Doughnut Chart)
     const statusBreakdown = filteredData.statusBreakdown || {};
     const statusData = {
-      labels: Object.keys(statusBreakdown).map(status => 
+      labels: Object.keys(statusBreakdown).map(status =>
         status.charAt(0).toUpperCase() + status.slice(1)
       ),
       datasets: [
@@ -339,7 +337,7 @@ const SalesReport = () => {
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
       <Header />
-      
+
       <div style={{ padding: '40px 20px' }}>
         {/* Page Header */}
         <div style={{
@@ -378,7 +376,7 @@ const SalesReport = () => {
           <h3 style={{ margin: '0 0 25px 0', color: '#2c3e50', fontSize: '1.5rem', fontWeight: '700' }}>
             🔍 Filters & Date Range
           </h3>
-          
+
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
@@ -589,7 +587,7 @@ const SalesReport = () => {
                 📈 Revenue & Orders Trend
               </h3>
               <div style={{ height: '400px', position: 'relative' }}>
-                <Line data={chartData.revenueByDate} options={{...lineChartOptions, plugins: {...lineChartOptions.plugins, title: {display: true, text: 'Daily Revenue and Orders Over Time'}}}} />
+                <Line data={chartData.revenueByDate} options={{ ...lineChartOptions, plugins: { ...lineChartOptions.plugins, title: { display: true, text: 'Daily Revenue and Orders Over Time' } } }} />
               </div>
             </div>
 
@@ -611,7 +609,7 @@ const SalesReport = () => {
                   💳 Payment Methods Distribution
                 </h3>
                 <div style={{ height: '350px', position: 'relative' }}>
-                  <Pie data={chartData.paymentMethods} options={{...chartOptions, plugins: {...chartOptions.plugins, title: {display: true, text: 'Revenue by Payment Method'}}}} />
+                  <Pie data={chartData.paymentMethods} options={{ ...chartOptions, plugins: { ...chartOptions.plugins, title: { display: true, text: 'Revenue by Payment Method' } } }} />
                 </div>
               </div>
 
@@ -627,7 +625,7 @@ const SalesReport = () => {
                   📋 Order Status Distribution
                 </h3>
                 <div style={{ height: '350px', position: 'relative' }}>
-                  <Doughnut data={chartData.orderStatus} options={{...chartOptions, plugins: {...chartOptions.plugins, title: {display: true, text: 'Orders by Status'}}}} />
+                  <Doughnut data={chartData.orderStatus} options={{ ...chartOptions, plugins: { ...chartOptions.plugins, title: { display: true, text: 'Orders by Status' } } }} />
                 </div>
               </div>
             </div>
@@ -645,7 +643,7 @@ const SalesReport = () => {
                 🏆 Top 10 Best Selling Products
               </h3>
               <div style={{ height: '400px', position: 'relative' }}>
-                <Bar data={chartData.topProducts} options={{...barChartOptions, plugins: {...barChartOptions.plugins, title: {display: true, text: 'Revenue and Quantity Sold by Product'}}}} />
+                <Bar data={chartData.topProducts} options={{ ...barChartOptions, plugins: { ...barChartOptions.plugins, title: { display: true, text: 'Revenue and Quantity Sold by Product' } } }} />
               </div>
             </div>
           </>

@@ -12,17 +12,17 @@ export const getImageUrl = (imageUrl) => {
   if (!imageUrl) {
     return `${API_BASE_URL}/images/default-product.svg`;
   }
-  
+
   // If it's already a full URL, return as is
   if (imageUrl.startsWith('http')) {
     return imageUrl;
   }
-  
+
   // If it starts with /, prepend the base URL
   if (imageUrl.startsWith('/')) {
     return `${API_BASE_URL}${imageUrl}`;
   }
-  
+
   // Otherwise, assume it's a relative path and add the base URL and leading slash
   return `${API_BASE_URL}/${imageUrl}`;
 };
@@ -35,7 +35,9 @@ export const getDefaultImageUrl = () => {
   return `${API_BASE_URL}/images/default-product.svg`;
 };
 
-export default {
+const imageUtils = {
   getImageUrl,
   getDefaultImageUrl
 };
+
+export default imageUtils;
