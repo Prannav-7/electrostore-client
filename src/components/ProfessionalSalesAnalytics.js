@@ -12,7 +12,7 @@ import {
   PointElement,
   Filler
 } from 'chart.js';
-import { Bar, Line, Doughnut } from 'react-chartjs-2';
+import { Line, Doughnut } from 'react-chartjs-2';
 import api from '../api';
 
 // Register Chart.js components
@@ -55,11 +55,11 @@ const ProfessionalSalesAnalytics = () => {
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-      labels.push(date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric' 
+      labels.push(date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
       }));
-      
+
       if (i === 0) {
         // Today's data from our sample orders (₹3,06,700 / 30 days = ~₹10,000/day)
         revenue.push(10200);
@@ -95,7 +95,7 @@ const ProfessionalSalesAnalytics = () => {
     };
 
     setSalesData(immediateData);
-    
+
     // Try to fetch real data in the background
     fetchAnalyticsData();
   }, [timeFrame]);
@@ -104,10 +104,10 @@ const ProfessionalSalesAnalytics = () => {
     try {
       console.log('🔄 Starting analytics data fetch...');
       setSalesData(prev => ({ ...prev, loading: true }));
-      
+
       // Try to fetch real data from simpler endpoints first
       console.log('📡 Trying to fetch from database...');
-      
+
       // Try the daily sales endpoint which might be more stable
       try {
         const dailySalesResponse = await api.get('/orders/admin/daily-sales', { timeout: 3000 });
@@ -133,7 +133,7 @@ const ProfessionalSalesAnalytics = () => {
       } catch (ordersError) {
         console.log('❌ All orders endpoint failed:', ordersError.message);
       }
-      
+
       // Fallback to the comprehensive API call (original approach)
       console.log('📡 Trying comprehensive API calls...');
       const [
@@ -149,7 +149,7 @@ const ProfessionalSalesAnalytics = () => {
         api.get('/orders/admin/category-breakdown'),
         api.get('/orders/admin/all-orders')
       ]);
-      
+
       console.log('✅ API responses received:', {
         salesAnalytics: salesAnalyticsResponse.data,
         monthlyComparison: monthlyComparisonResponse.data,
@@ -175,7 +175,7 @@ const ProfessionalSalesAnalytics = () => {
       );
 
       setSalesData(processedData);
-      
+
     } catch (error) {
       console.error('❌ Error fetching analytics:', error);
       console.error('Error details:', {
@@ -195,10 +195,10 @@ const ProfessionalSalesAnalytics = () => {
   const generateDataFromDailySales = (dailySalesData, timeFrame) => {
     const todayRevenue = dailySalesData.todayRevenue || 0;
     const todayOrders = dailySalesData.todayOrders || 0;
-    
+
     // Generate chart data
     const chartData = generateDailyDataFromSales(dailySalesData, timeFrame);
-    
+
     return {
       labels: chartData.labels, // Fix: include labels for charts
       revenue: chartData.revenue, // Fix: include revenue array for charts
@@ -219,13 +219,13 @@ const ProfessionalSalesAnalytics = () => {
   const generateDataFromOrders = (orders, timeFrame) => {
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
+
     // Calculate today's revenue from all orders
     const todaysOrders = orders.filter(order => {
       const orderDate = new Date(order.createdAt);
       return orderDate >= startOfToday;
     });
-    
+
     const todayRevenue = todaysOrders.reduce((sum, order) => {
       return sum + (order.orderSummary?.finalAmount || order.finalAmount || 0);
     }, 0);
@@ -239,7 +239,7 @@ const ProfessionalSalesAnalytics = () => {
           const name = item.productName || item.name || 'Unknown Product';
           const quantity = item.quantity || 1;
           const price = item.price || 0;
-          
+
           if (productMap.has(name)) {
             const existing = productMap.get(name);
             productMap.set(name, {
@@ -264,7 +264,7 @@ const ProfessionalSalesAnalytics = () => {
 
     // Generate chart data
     const chartData = generateDailyData(orders, timeFrame);
-    
+
     return {
       labels: chartData.labels, // Fix: include labels for charts
       revenue: chartData.revenue, // Fix: include revenue array for charts
@@ -293,9 +293,9 @@ const ProfessionalSalesAnalytics = () => {
       for (let i = days - 1; i >= 0; i--) {
         const date = new Date();
         date.setDate(date.getDate() - i);
-        labels.push(date.toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: 'numeric' 
+        labels.push(date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric'
         }));
 
         // Filter orders for this specific date
@@ -338,8 +338,8 @@ const ProfessionalSalesAnalytics = () => {
         dataSource: 'real',
         totalRevenue: salesAnalytics.totalRevenue || revenue.reduce((a, b) => a + b, 0),
         totalOrders: salesAnalytics.totalOrders || orders.reduce((a, b) => a + b, 0),
-        averageOrderValue: salesAnalytics.averageOrderValue || 
-          (orders.reduce((a, b) => a + b, 0) > 0 ? 
+        averageOrderValue: salesAnalytics.averageOrderValue ||
+          (orders.reduce((a, b) => a + b, 0) > 0 ?
             Math.round(revenue.reduce((a, b) => a + b, 0) / orders.reduce((a, b) => a + b, 0)) : 0)
       };
     } catch (error) {
@@ -357,7 +357,7 @@ const ProfessionalSalesAnalytics = () => {
         items.forEach(item => {
           const category = item.category || 'Electrical';
           const revenue = (item.price || 0) * (item.quantity || 1);
-          
+
           if (categoryMap.has(category)) {
             categoryMap.set(category, categoryMap.get(category) + revenue);
           } else {
@@ -381,7 +381,7 @@ const ProfessionalSalesAnalytics = () => {
       const date = new Date(order.createdAt);
       const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
       const revenue = order.orderSummary?.finalAmount || order.finalAmount || 0;
-      
+
       if (monthMap.has(monthKey)) {
         monthMap.set(monthKey, monthMap.get(monthKey) + revenue);
       } else {
@@ -405,9 +405,9 @@ const ProfessionalSalesAnalytics = () => {
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-      labels.push(date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric' 
+      labels.push(date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
       }));
 
       // Filter orders for this specific date
@@ -440,9 +440,9 @@ const ProfessionalSalesAnalytics = () => {
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-      labels.push(date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric' 
+      labels.push(date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
       }));
 
       // Use provided data or simulate
@@ -470,14 +470,14 @@ const ProfessionalSalesAnalytics = () => {
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-      labels.push(date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric' 
+      labels.push(date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
       }));
-      
+
       // Generate realistic electrical store data - matching actual store performance
       let dailyRevenue, dailyOrders;
-      
+
       if (i === 0) {
         // Today's data should match actual sales report (₹5,600)
         dailyRevenue = 5600;
@@ -487,14 +487,14 @@ const ProfessionalSalesAnalytics = () => {
         dailyRevenue = Math.floor(Math.random() * 8000) + 2000; // ₹2k to ₹10k daily
         dailyOrders = Math.floor(Math.random() * 12) + 2; // 2-14 orders daily
       }
-      
+
       revenue.push(dailyRevenue);
       orders.push(dailyOrders);
       totalRevenue += dailyRevenue;
       totalOrders += dailyOrders;
     }
 
-    const avgOrderValue = Math.round(totalRevenue / totalOrders);
+    // const avgOrderValue = Math.round(totalRevenue / totalOrders);
 
     return {
       labels,
@@ -551,21 +551,21 @@ const ProfessionalSalesAnalytics = () => {
     },
     scales: {
       x: {
-        grid: { 
+        grid: {
           color: 'rgba(255, 255, 255, 0.1)',
-          drawBorder: false 
+          drawBorder: false
         },
-        ticks: { 
+        ticks: {
           color: '#ffffff',
           font: { size: 11 }
         }
       },
       y: {
-        grid: { 
+        grid: {
           color: 'rgba(255, 255, 255, 0.1)',
-          drawBorder: false 
+          drawBorder: false
         },
-        ticks: { 
+        ticks: {
           color: '#ffffff',
           font: { size: 11 }
         }
@@ -622,8 +622,8 @@ const ProfessionalSalesAnalytics = () => {
     { category: 'Wiring', value: 20, color: '#F59E0B' }
   ];
 
-  const categoryData = salesData.categoryBreakdown && salesData.categoryBreakdown.length > 0 
-    ? salesData.categoryBreakdown 
+  const categoryData = salesData.categoryBreakdown && salesData.categoryBreakdown.length > 0
+    ? salesData.categoryBreakdown
     : fallbackCategories;
 
   const categoryChartData = {
@@ -683,7 +683,7 @@ const ProfessionalSalesAnalytics = () => {
       minHeight: '100vh'
     }}>
       {/* Header Section */}
-      <div style={{ 
+      <div style={{
         marginBottom: '3rem',
         textAlign: 'center',
         background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%)',
@@ -692,8 +692,8 @@ const ProfessionalSalesAnalytics = () => {
         border: '1px solid rgba(255, 255, 255, 0.1)',
         backdropFilter: 'blur(20px)'
       }}>
-        <h1 style={{ 
-          fontSize: '2.5rem', 
+        <h1 style={{
+          fontSize: '2.5rem',
           fontWeight: '800',
           margin: '0 0 1rem 0',
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -703,14 +703,14 @@ const ProfessionalSalesAnalytics = () => {
         }}>
           📊 Professional Sales Analytics
         </h1>
-        
+
         {/* Data Source Indicator */}
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
           gap: '8px',
-          background: salesData.dataSource === 'real' 
-            ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
+          background: salesData.dataSource === 'real'
+            ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
             : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
           color: 'white',
           padding: '8px 16px',
@@ -721,10 +721,10 @@ const ProfessionalSalesAnalytics = () => {
         }}>
           {salesData.dataSource === 'real' ? '✅ Live Database' : '🔄 Sample Data (DB Connecting...)'}
         </div>
-        
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
+
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
           flexWrap: 'wrap',
           gap: '1rem',
           marginTop: '2rem'
@@ -738,8 +738,8 @@ const ProfessionalSalesAnalytics = () => {
               key={option.value}
               onClick={() => setTimeFrame(option.value)}
               style={{
-                background: timeFrame === option.value 
-                  ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                background: timeFrame === option.value
+                  ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
                   : 'rgba(255, 255, 255, 0.1)',
                 color: '#ffffff',
                 border: timeFrame === option.value ? 'none' : '1px solid rgba(255, 255, 255, 0.2)',
@@ -776,9 +776,9 @@ const ProfessionalSalesAnalytics = () => {
       </div>
 
       {/* Key Metrics Cards */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
         gap: '2rem',
         marginBottom: '3rem'
       }}>
@@ -794,9 +794,9 @@ const ProfessionalSalesAnalytics = () => {
         }}>
           <div style={{ position: 'relative', zIndex: 1 }}>
             <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>💰</div>
-            <h3 style={{ 
-              color: '#10b981', 
-              fontSize: '1rem', 
+            <h3 style={{
+              color: '#10b981',
+              fontSize: '1rem',
               fontWeight: '600',
               margin: '0 0 0.5rem 0',
               textTransform: 'uppercase',
@@ -804,9 +804,9 @@ const ProfessionalSalesAnalytics = () => {
             }}>
               Total Revenue
             </h3>
-            <p style={{ 
-              fontSize: '2.2rem', 
-              fontWeight: '800', 
+            <p style={{
+              fontSize: '2.2rem',
+              fontWeight: '800',
               margin: '0',
               color: '#ffffff'
             }}>
@@ -834,9 +834,9 @@ const ProfessionalSalesAnalytics = () => {
         }}>
           <div style={{ position: 'relative', zIndex: 1 }}>
             <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🛒</div>
-            <h3 style={{ 
-              color: '#3b82f6', 
-              fontSize: '1rem', 
+            <h3 style={{
+              color: '#3b82f6',
+              fontSize: '1rem',
               fontWeight: '600',
               margin: '0 0 0.5rem 0',
               textTransform: 'uppercase',
@@ -844,9 +844,9 @@ const ProfessionalSalesAnalytics = () => {
             }}>
               Total Orders
             </h3>
-            <p style={{ 
-              fontSize: '2.2rem', 
-              fontWeight: '800', 
+            <p style={{
+              fontSize: '2.2rem',
+              fontWeight: '800',
               margin: '0',
               color: '#ffffff'
             }}>
@@ -874,9 +874,9 @@ const ProfessionalSalesAnalytics = () => {
         }}>
           <div style={{ position: 'relative', zIndex: 1 }}>
             <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>📈</div>
-            <h3 style={{ 
-              color: '#f59e0b', 
-              fontSize: '1rem', 
+            <h3 style={{
+              color: '#f59e0b',
+              fontSize: '1rem',
               fontWeight: '600',
               margin: '0 0 0.5rem 0',
               textTransform: 'uppercase',
@@ -884,9 +884,9 @@ const ProfessionalSalesAnalytics = () => {
             }}>
               Avg Order Value
             </h3>
-            <p style={{ 
-              fontSize: '2.2rem', 
-              fontWeight: '800', 
+            <p style={{
+              fontSize: '2.2rem',
+              fontWeight: '800',
               margin: '0',
               color: '#ffffff'
             }}>
@@ -904,9 +904,9 @@ const ProfessionalSalesAnalytics = () => {
       </div>
 
       {/* Charts Section */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))', 
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
         gap: '2rem',
         marginBottom: '3rem'
       }}>
@@ -918,8 +918,8 @@ const ProfessionalSalesAnalytics = () => {
           border: '1px solid rgba(255, 255, 255, 0.1)',
           backdropFilter: 'blur(20px)'
         }}>
-          <h3 style={{ 
-            color: '#ffffff', 
+          <h3 style={{
+            color: '#ffffff',
             marginBottom: '1.5rem',
             fontSize: '1.3rem',
             fontWeight: '700',
@@ -942,8 +942,8 @@ const ProfessionalSalesAnalytics = () => {
           border: '1px solid rgba(255, 255, 255, 0.1)',
           backdropFilter: 'blur(20px)'
         }}>
-          <h3 style={{ 
-            color: '#ffffff', 
+          <h3 style={{
+            color: '#ffffff',
             marginBottom: '1.5rem',
             fontSize: '1.3rem',
             fontWeight: '700',
@@ -956,9 +956,9 @@ const ProfessionalSalesAnalytics = () => {
           <div style={{ height: '300px', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
             {categoryChartData && categoryChartData.datasets && categoryChartData.datasets[0] && categoryChartData.datasets[0].data && categoryChartData.datasets[0].data.length > 0 ? (
               <div style={{ width: '100%', height: '100%' }}>
-                <Doughnut 
-                  data={categoryChartData} 
-                  options={{ 
+                <Doughnut
+                  data={categoryChartData}
+                  options={{
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
@@ -981,14 +981,14 @@ const ProfessionalSalesAnalytics = () => {
                         displayColors: false
                       }
                     }
-                  }} 
+                  }}
                 />
               </div>
             ) : (
               <div style={{ color: '#ffffff', textAlign: 'center', padding: '20px' }}>
                 <div style={{ fontSize: '16px', marginBottom: '10px' }}>🔄 Loading chart data...</div>
                 <div style={{ fontSize: '12px', opacity: 0.7 }}>
-                  Labels: {JSON.stringify(categoryChartData?.labels)}<br/>
+                  Labels: {JSON.stringify(categoryChartData?.labels)}<br />
                   Data: {JSON.stringify(categoryChartData?.datasets?.[0]?.data)}
                 </div>
               </div>

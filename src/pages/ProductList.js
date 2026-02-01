@@ -5,7 +5,6 @@ import api from '../api';
 import Header from '../components/Header';
 import StarRating from '../components/StarRating';
 import { useAuth } from '../contexts/AuthContext';
-// import { useCart } from '../contexts/CartContext';
 
 const ProductList = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();

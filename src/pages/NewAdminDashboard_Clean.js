@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import AdminIndicator from '../components/AdminIndicator';
@@ -27,7 +27,7 @@ const NewAdminDashboard = () => {
 
   const categories = [
     'Electrical Goods',
-    'Hardware & Tools', 
+    'Hardware & Tools',
     'Wiring & Cables',
     'Switches & Sockets',
     'Lighting Solutions',
@@ -43,9 +43,9 @@ const NewAdminDashboard = () => {
       return;
     }
     fetchProducts();
-  }, [isAdmin, navigate]);
+  }, [isAdmin, navigate, fetchProducts]);
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.get('/products');
@@ -65,7 +65,7 @@ const NewAdminDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const calculateStats = (productsData) => {
     const totalProducts = productsData.length;
@@ -84,7 +84,7 @@ const NewAdminDashboard = () => {
   const handleDeleteProduct = async (productId, productName) => {
     const confirmMessage = `Are you sure you want to delete "${productName}"?\\n\\nType "DELETE" to confirm:`;
     const userInput = window.prompt(confirmMessage);
-    
+
     if (userInput !== 'DELETE') {
       if (userInput !== null) {
         alert('Product deletion cancelled. You must type "DELETE" exactly to confirm.');
@@ -110,7 +110,7 @@ const NewAdminDashboard = () => {
     try {
       const response = await api.put(`/products/${productId}`, updatedData);
       if (response.data?.success || response.data?._id) {
-        const updatedProducts = products.map(product => 
+        const updatedProducts = products.map(product =>
           product._id === productId ? { ...product, ...updatedData } : product
         );
         setProducts(updatedProducts);
@@ -124,37 +124,11 @@ const NewAdminDashboard = () => {
     }
   };
 
-  // Professional notification system
-  const showNotification = (message, type = 'info') => {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      padding: 12px 24px;
-      border-radius: 8px;
-      color: white;
-      font-weight: 500;
-      z-index: 10000;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      animation: slideIn 0.3s ease-out;
-      ${type === 'success' ? 'background: linear-gradient(135deg, #10b981, #059669);' : 
-        type === 'error' ? 'background: linear-gradient(135deg, #ef4444, #dc2626);' : 
-        'background: linear-gradient(135deg, #3b82f6, #2563eb);'}
-    `;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-      notification.style.animation = 'slideOut 0.3s ease-in';
-      setTimeout(() => document.body.removeChild(notification), 300);
-    }, 3000);
-  };
+
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchTerm.toLowerCase());
+      product.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === '' || product.category === filterCategory;
     return matchesSearch && matchesCategory;
   });
@@ -192,7 +166,7 @@ const NewAdminDashboard = () => {
 
       <div style={{ position: 'relative', zIndex: 1 }}>
         <Header />
-        
+
         {/* Professional Admin Header */}
         <div className="admin-header">
           <h1 className="admin-title">⚡ Admin Dashboard</h1>
@@ -258,23 +232,23 @@ const NewAdminDashboard = () => {
               <>
                 {activeTab === 'products' && (
                   <div>
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center', 
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
                       marginBottom: '2rem',
                       flexWrap: 'wrap',
                       gap: '1rem'
                     }}>
-                      <h2 style={{ 
-                        color: 'var(--text-primary)', 
+                      <h2 style={{
+                        color: 'var(--text-primary)',
                         margin: 0,
                         fontSize: '2rem',
                         fontWeight: '600'
                       }}>📦 Product Management</h2>
-                      <button 
+                      <button
                         className="professional-button"
-                        onClick={() => {/* Add product logic */}}
+                        onClick={() => {/* Add product logic */ }}
                         style={{
                           background: 'var(--success-gradient)',
                           padding: '0.8rem 1.5rem',
@@ -289,8 +263,8 @@ const NewAdminDashboard = () => {
                         + Add New Product
                       </button>
                     </div>
-                    
-                    <div style={{ 
+
+                    <div style={{
                       background: 'rgba(255,255,255,0.05)',
                       borderRadius: '12px',
                       padding: '2rem',
@@ -307,19 +281,19 @@ const NewAdminDashboard = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {activeTab === 'analytics' && (
                   <div>
                     <ProfessionalSalesAnalytics />
                   </div>
                 )}
-                
+
                 {activeTab === 'orders' && (
                   <div>
                     <CustomerOrders />
                   </div>
                 )}
-                
+
                 {activeTab === 'sales' && (
                   <div>
                     <SalesDashboard />

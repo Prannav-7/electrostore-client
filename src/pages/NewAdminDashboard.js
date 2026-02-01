@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import AdminIndicator from '../components/AdminIndicator';
@@ -27,7 +27,7 @@ const NewAdminDashboard = () => {
 
   const categories = [
     'Electrical Goods',
-    'Hardware & Tools', 
+    'Hardware & Tools',
     'Wiring & Cables',
     'Switches & Sockets',
     'Lighting Solutions',
@@ -36,16 +36,7 @@ const NewAdminDashboard = () => {
     'Safety Equipment'
   ];
 
-  // Redirect if not admin
-  useEffect(() => {
-    if (!isAdmin) {
-      navigate('/');
-      return;
-    }
-    fetchProducts();
-  }, [isAdmin, navigate]);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.get('/products');
@@ -65,7 +56,16 @@ const NewAdminDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Redirect if not admin
+  useEffect(() => {
+    if (!isAdmin) {
+      navigate('/');
+      return;
+    }
+    fetchProducts();
+  }, [isAdmin, navigate, fetchProducts]);
 
   const calculateStats = (productsData) => {
     const totalProducts = productsData.length;
@@ -84,7 +84,7 @@ const NewAdminDashboard = () => {
   const handleDeleteProduct = async (productId, productName) => {
     const confirmMessage = `Are you sure you want to delete "${productName}"?\\n\\nType "DELETE" to confirm:`;
     const userInput = window.prompt(confirmMessage);
-    
+
     if (userInput !== 'DELETE') {
       if (userInput !== null) {
         alert('Product deletion cancelled. You must type "DELETE" exactly to confirm.');
@@ -110,7 +110,7 @@ const NewAdminDashboard = () => {
     try {
       const response = await api.put(`/products/${productId}`, updatedData);
       if (response.data?.success || response.data?._id) {
-        const updatedProducts = products.map(product => 
+        const updatedProducts = products.map(product =>
           product._id === productId ? { ...product, ...updatedData } : product
         );
         setProducts(updatedProducts);
@@ -124,37 +124,11 @@ const NewAdminDashboard = () => {
     }
   };
 
-  // Professional notification system
-  const showNotification = (message, type = 'info') => {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      padding: 12px 24px;
-      border-radius: 8px;
-      color: white;
-      font-weight: 500;
-      z-index: 10000;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      animation: slideIn 0.3s ease-out;
-      ${type === 'success' ? 'background: linear-gradient(135deg, #10b981, #059669);' : 
-        type === 'error' ? 'background: linear-gradient(135deg, #ef4444, #dc2626);' : 
-        'background: linear-gradient(135deg, #3b82f6, #2563eb);'}
-    `;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-      notification.style.animation = 'slideOut 0.3s ease-in';
-      setTimeout(() => document.body.removeChild(notification), 300);
-    }, 3000);
-  };
+
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchTerm.toLowerCase());
+      product.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === '' || product.category === filterCategory;
     return matchesSearch && matchesCategory;
   });
@@ -192,13 +166,13 @@ const NewAdminDashboard = () => {
 
       <div style={{ position: 'relative', zIndex: 1 }}>
         <Header />
-        
+
         {/* Professional Admin Header */}
         <div className="admin-header">
           <h1 className="admin-title">⚡ Admin Dashboard</h1>
           <p className="admin-subtitle">Jaimaaruthi Electrical & Hardware Store Management</p>
         </div>
-        
+
         <div className="admin-container">
           {/* Professional Navigation */}
           <div className="admin-nav">
@@ -214,8 +188,8 @@ const NewAdminDashboard = () => {
                   onClick={() => setActiveTab(tab.id)}
                   className={`nav-tab ${activeTab === tab.id ? 'active' : ''}`}
                   style={{
-                    background: activeTab === tab.id 
-                      ? `linear-gradient(135deg, ${tab.color}, ${tab.color}dd)` 
+                    background: activeTab === tab.id
+                      ? `linear-gradient(135deg, ${tab.color}, ${tab.color}dd)`
                       : 'rgba(255, 255, 255, 0.1)',
                     borderColor: activeTab === tab.id ? tab.color : 'transparent',
                     color: activeTab === tab.id ? 'white' : 'var(--text-secondary)',
@@ -243,24 +217,24 @@ const NewAdminDashboard = () => {
                     <ProfessionalSalesAnalytics />
                   </div>
                 )}
-                
+
                 {activeTab === 'products' && (
                   <div>
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center', 
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
                       marginBottom: '2rem',
                       flexWrap: 'wrap',
                       gap: '1rem'
                     }}>
-                      <h2 style={{ 
-                        color: 'var(--text-primary)', 
+                      <h2 style={{
+                        color: 'var(--text-primary)',
                         margin: 0,
                         fontSize: '2rem',
                         fontWeight: '600'
                       }}>📦 Product Management</h2>
-                      <button 
+                      <button
                         onClick={() => navigate('/add-product')}
                         style={{
                           background: 'linear-gradient(135deg, #10b981, #059669)',
@@ -283,9 +257,9 @@ const NewAdminDashboard = () => {
                     </div>
 
                     {/* Product Stats Cards */}
-                    <div style={{ 
-                      display: 'grid', 
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                       gap: '1rem',
                       marginBottom: '2rem'
                     }}>
@@ -300,7 +274,7 @@ const NewAdminDashboard = () => {
                         <h3 style={{ color: '#10b981', fontSize: '1.8rem', margin: '0' }}>{stats.totalProducts}</h3>
                         <p style={{ color: 'var(--text-secondary)', margin: '0.25rem 0 0' }}>Total Products</p>
                       </div>
-                      
+
                       <div style={{
                         background: 'rgba(59, 130, 246, 0.1)',
                         padding: '1.5rem',
@@ -312,7 +286,7 @@ const NewAdminDashboard = () => {
                         <h3 style={{ color: '#3b82f6', fontSize: '1.8rem', margin: '0' }}>₹{stats.totalValue.toLocaleString()}</h3>
                         <p style={{ color: 'var(--text-secondary)', margin: '0.25rem 0 0' }}>Total Value</p>
                       </div>
-                      
+
                       <div style={{
                         background: 'rgba(245, 158, 11, 0.1)',
                         padding: '1.5rem',
@@ -324,7 +298,7 @@ const NewAdminDashboard = () => {
                         <h3 style={{ color: '#f59e0b', fontSize: '1.8rem', margin: '0' }}>{stats.lowStock}</h3>
                         <p style={{ color: 'var(--text-secondary)', margin: '0.25rem 0 0' }}>Low Stock</p>
                       </div>
-                      
+
                       <div style={{
                         background: 'rgba(239, 68, 68, 0.1)',
                         padding: '1.5rem',
@@ -339,9 +313,9 @@ const NewAdminDashboard = () => {
                     </div>
 
                     {/* Search and Filter */}
-                    <div style={{ 
-                      display: 'flex', 
-                      gap: '1rem', 
+                    <div style={{
+                      display: 'flex',
+                      gap: '1rem',
                       marginBottom: '2rem',
                       flexWrap: 'wrap'
                     }}>
@@ -399,10 +373,10 @@ const NewAdminDashboard = () => {
                           <p>Try connecting to the database or add some products.</p>
                         </div>
                       ) : (
-                        <div style={{ 
-                          display: 'grid', 
-                          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
-                          gap: '1.5rem' 
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                          gap: '1.5rem'
                         }}>
                           {filteredProducts.map(product => (
                             <div key={product._id} style={{
@@ -416,8 +390,8 @@ const NewAdminDashboard = () => {
                               overflow: 'hidden'
                             }}>
                               {/* Product Image Section */}
-                              <div style={{ 
-                                display: 'flex', 
+                              <div style={{
+                                display: 'flex',
                                 alignItems: 'center',
                                 gap: '1rem',
                                 marginBottom: '1rem'
@@ -455,11 +429,11 @@ const NewAdminDashboard = () => {
                                     }}
                                   />
                                 </div>
-                                
+
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                                    <h4 style={{ 
-                                      color: 'var(--text-primary)', 
+                                    <h4 style={{
+                                      color: 'var(--text-primary)',
                                       margin: 0,
                                       fontSize: '1.1rem',
                                       fontWeight: '600',
@@ -481,13 +455,13 @@ const NewAdminDashboard = () => {
                                       {product.stock > 10 ? 'In Stock' : product.stock > 0 ? 'Low Stock' : 'Out of Stock'}
                                     </span>
                                   </div>
-                                  
+
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <p style={{ 
-                                      color: 'var(--text-primary)', 
-                                      fontSize: '1.2rem', 
-                                      fontWeight: '700', 
-                                      margin: '0' 
+                                    <p style={{
+                                      color: 'var(--text-primary)',
+                                      fontSize: '1.2rem',
+                                      fontWeight: '700',
+                                      margin: '0'
                                     }}>
                                       ₹{product.price?.toLocaleString()}
                                     </p>
@@ -504,14 +478,14 @@ const NewAdminDashboard = () => {
                                   </div>
                                 </div>
                               </div>
-                              
-                              <p style={{ 
-                                color: 'var(--text-secondary)', 
+
+                              <p style={{
+                                color: 'var(--text-secondary)',
                                 fontSize: '14px',
                                 margin: '0 0 1rem 0',
                                 lineHeight: '1.4'
                               }}>{product.description?.slice(0, 100) || 'No description available'}...</p>
-                              
+
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                                 <div>
                                   <p style={{ color: 'var(--text-primary)', fontSize: '1.2rem', fontWeight: '700', margin: '0' }}>
@@ -531,7 +505,7 @@ const NewAdminDashboard = () => {
                                   {product.category}
                                 </span>
                               </div>
-                              
+
                               <div style={{ display: 'flex', gap: '0.5rem' }}>
                                 <button
                                   onClick={() => setEditingProduct(product)}
@@ -575,13 +549,13 @@ const NewAdminDashboard = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {activeTab === 'orders' && (
                   <div>
                     <CustomerOrders />
                   </div>
                 )}
-                
+
                 {activeTab === 'sales' && (
                   <div>
                     <SalesDashboard />
@@ -625,7 +599,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
 
   const categories = [
     'Electrical Goods',
-    'Hardware & Tools', 
+    'Hardware & Tools',
     'Wiring & Cables',
     'Switches & Sockets',
     'Lighting Solutions',
@@ -642,7 +616,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
       ...prev,
       [name]: value
     }));
-    
+
     // Clear error for this field
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
@@ -651,22 +625,22 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.name.trim()) newErrors.name = 'Product name is required';
     if (!formData.price || formData.price <= 0) newErrors.price = 'Valid price is required';
     if (!formData.stock || formData.stock < 0) newErrors.stock = 'Valid stock quantity is required';
     if (!formData.category) newErrors.category = 'Category is required';
     if (!formData.description.trim()) newErrors.description = 'Description is required';
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     setLoading(true);
     try {
       const updateData = {
@@ -675,7 +649,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
         stock: parseInt(formData.stock),
         mrp: formData.mrp ? parseFloat(formData.mrp) : formData.price * 1.2
       };
-      
+
       await onUpdate(product._id, updateData);
       onClose();
     } catch (error) {
@@ -805,7 +779,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
                 />
                 {errors.price && <span style={{ color: '#ff6b6b', fontSize: '12px', marginTop: '5px', display: 'block' }}>{errors.price}</span>}
               </div>
-              
+
               <div>
                 <label style={{
                   display: 'block',
@@ -862,7 +836,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
                 />
                 {errors.stock && <span style={{ color: '#ff6b6b', fontSize: '12px', marginTop: '5px', display: 'block' }}>{errors.stock}</span>}
               </div>
-              
+
               <div>
                 <label style={{
                   display: 'block',
@@ -923,7 +897,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
                 </select>
                 {errors.category && <span style={{ color: '#ff6b6b', fontSize: '12px', marginTop: '5px', display: 'block' }}>{errors.category}</span>}
               </div>
-              
+
               <div>
                 <label style={{
                   display: 'block',
@@ -1047,7 +1021,7 @@ const EditProductModal = ({ product, onClose, onUpdate }) => {
           </div>
         </form>
       </div>
-      
+
     </div>
   );
 };

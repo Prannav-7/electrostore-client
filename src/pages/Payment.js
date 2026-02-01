@@ -866,56 +866,7 @@ const Payment = () => {
 
 
 
-  const handlePaymentSuccess = async (orderData) => {
-    try {
-      console.log('✅ Processing successful payment...');
 
-      // Create order with completed payment status
-      const orderResponse = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          items: orderData.items,
-          customerDetails: orderData.customerDetails,
-          orderSummary: orderData.orderSummary,
-          paymentDetails: {
-            method: 'razorpay',
-            status: 'completed',
-            razorpay_order_id: orderData.razorpayOrderId,
-            razorpay_payment_id: orderData.razorpayPaymentId,
-            razorpay_signature: orderData.razorpaySignature,
-            amount: orderData.orderSummary.total,
-            timestamp: orderData.timestamp
-          }
-        })
-      });
-
-      if (orderResponse.ok) {
-        const order = await orderResponse.json();
-
-        navigate('/order-success', {
-          state: {
-            message: 'Payment completed successfully!',
-            orderId: order._id,
-            orderNumber: order.orderNumber || order._id,
-            paymentMethod: '💳 Online Payment (Razorpay)',
-            amount: orderData.orderSummary.total,
-            orderData: orderData
-          }
-        });
-      } else {
-        throw new Error('Failed to create order');
-      }
-    } catch (error) {
-      console.error('❌ Error confirming payment:', error);
-      alert('Payment was successful but order confirmation failed. Please contact support.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleAddressSubmit = () => {
     // Comprehensive address validation
